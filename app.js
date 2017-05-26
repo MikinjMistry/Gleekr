@@ -6,6 +6,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('./config');
 var db = require('./models/db');
+var fileUpload = require('express-fileupload');
+var expressValidator = require('express-validator');
 
 var app = express();
 
@@ -17,12 +19,14 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(expressValidator());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use('/upload',express.static(path.join(__dirname, 'upload')));
 //Call Middleware
-app.use(require('./middlewares/auth'));
+//app.use(require('./middlewares/auth'));
 
 // Use routes and methods from controllers
 app.use(require('./controllers'));
