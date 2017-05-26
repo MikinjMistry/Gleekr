@@ -5,27 +5,20 @@ var moment = require('moment');
 var jwt = require('jsonwebtoken');
 var twilio = require('twilio');
 var user = require("../models/user");
-var otp = require("../models/user");
+var otp = require("../models/otp");
 require('dotenv').config();
 /* Include controllers to handle routes */
 var users = require('./users');
 var activities = require('./activities');
-
+var auth = require('../middlewares/auth');
 /* Link controllers with routes */
-router.use('/users',require('../middlewares/auth'), require('./users'));
-router.use('/activities',require('../middlewares/auth'), require('./activities'));
+router.use('/users',auth,users);
+router.use('/activities',auth,activities);
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   //res.render('index', { title: 'Express' });
   res.send({test: 'hello world'});
-});
-
-
-
-/* GET home page. */
-router.get('/', function (req, res, next) {
-    res.render('index', {title: 'Gleekr Api'});
 });
 
 /**
