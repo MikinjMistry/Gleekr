@@ -278,8 +278,8 @@ router.post('/change_number', function (req, res, next) {
                                     if (err) {
                                         result = {
                                             success: 0,
-                                            message: "Error in send OTP",
-                                            error: errors
+                                            message: "Error in send OTP"
+                                            //error: errors
                                         };
                                         res.json(result);
                                     }
@@ -289,8 +289,8 @@ router.post('/change_number', function (req, res, next) {
                                             if (err) {
                                                 result = {
                                                     success: 0,
-                                                    message: "Error in updating OTP",
-                                                    error: err
+                                                    message: "Error in updating OTP"
+                                                    //error: err
                                                 };
                                                 res.json(result);
                                             } else {
@@ -299,7 +299,7 @@ router.post('/change_number', function (req, res, next) {
                                         });
                                     } else {
                                         var json = {
-                                            'mobile_no': req.body.new_phone,
+                                            'mobileNo': req.body.new_phone,
                                             'code': code
                                         };
                                         var otpObject = new otp(json);
@@ -307,8 +307,8 @@ router.post('/change_number', function (req, res, next) {
                                             if (err) {
                                                 result = {
                                                     success: 0,
-                                                    message: "Error in inserting OTP",
-                                                    error: err
+                                                    message: "Error in inserting OTP"
+                                                    //error: err
                                                 };
                                                 res.json(result);
                                             } else {
@@ -324,8 +324,8 @@ router.post('/change_number', function (req, res, next) {
                     // User not found
                     result = {
                         success: 0,
-                        message: "User not available in database",
-                        error: err
+                        message: "User not available in database"
+                        //error: err
                     };
                     res.json(result);
                 }
@@ -334,8 +334,8 @@ router.post('/change_number', function (req, res, next) {
     } else {
         result = {
             success: 0,
-            message: "Validation Error",
-            error: errors
+            message: "Validation Error"
+            //error: errors
         };
         res.json(result);
     }
@@ -353,7 +353,7 @@ router.post('/change_number', function (req, res, next) {
  * 
  * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {String} error optional to describe error
+ * @apiSuccess {String} token If number change.
  */
 router.post('/verifyOTP', function (req, res, next) {
     var schema = {
@@ -369,12 +369,12 @@ router.post('/verifyOTP', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        otp.findOne({mobile_no: req.body.new_phone}, function (err, otpData) {
+        otp.findOne({mobileNo: req.body.new_phone}, function (err, otpData) {
             if (err) {
                 var result = {
                     success: 0,
-                    message: "Error in finding user with otp",
-                    error: err
+                    message: "Error in finding user with otp"
+                    // error: err
                 };
                 res.json(result);
             }
@@ -385,18 +385,18 @@ router.post('/verifyOTP', function (req, res, next) {
                 if (duration > process.env.OTP_EXPIRETION) {
                     var result = {
                         success: 0,
-                        message: "Your OTP code is expired",
-                        error: []
+                        message: "Your OTP code is expired"
+                        // error: []
                     };
                     res.json(result);
                 } else if (otpData.code == req.body.otp) {
-                    json = {mobile_no: otpData.mobile_no};
-                    user.findOne({mobile_no: otpData.mobile_no}, function (err, userData) {
+                    json = {mobileNo: otpData.mobileNo};
+                    user.findOne(json, function (err, userData) {
                         if (err) {
                             result = {
                                 success: 0,
-                                message: "Error in finding User",
-                                error: err
+                                message: "Error in finding User"
+                                // error: err
                             };
                             res.json(result);
                         }
@@ -405,8 +405,8 @@ router.post('/verifyOTP', function (req, res, next) {
                                 if (err) {
                                     result = {
                                         success: 0,
-                                        message: "Error in deleteing OTP",
-                                        error: err
+                                        message: "Error in deleteing OTP"
+                                        // error: err
                                     };
                                     res.json(result);
                                 }
@@ -418,17 +418,17 @@ router.post('/verifyOTP', function (req, res, next) {
                             })
                         } else {
                             // OTP matched
-                            var userJson = {id: req.userInfo.id, mobile_no: req.body.new_phone};
+                            var userJson = {id: req.userInfo.id, mobileNo: req.body.new_phone};
                             var token = jwt.sign(userJson, process.env.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
-                            json = {mobile_no: req.body.new_phone};
+                            json = {mobileNo: req.body.new_phone};
                             user.update({_id: {$eq: req.userInfo.id}}, {$set: json}, function (err, responce) {
                                 if (err) {
                                     result = {
                                         success: 0,
-                                        message: "Error in updating phone number",
-                                        error: err
+                                        message: "Error in updating phone number"
+                                        // error: err
                                     };
                                     res.json(result);
                                 } else {
@@ -436,8 +436,8 @@ router.post('/verifyOTP', function (req, res, next) {
                                         if (err) {
                                             result = {
                                                 success: 0,
-                                                message: "Error in deleteing OTP",
-                                                error: err
+                                                message: "Error in deleteing OTP"
+                                                // error: err
                                             };
                                             res.json(result);
                                         }
@@ -464,8 +464,8 @@ router.post('/verifyOTP', function (req, res, next) {
             } else {
                 var result = {
                     success: 0,
-                    message: "Mobile number has not requested for sendOTP",
-                    error: []
+                    message: "Mobile number has not requested for sendOTP"
+                    // error: []
                 };
                 res.json(result);
             }
@@ -473,12 +473,13 @@ router.post('/verifyOTP', function (req, res, next) {
     } else {
         var result = {
             success: 0,
-            message: "Validation Error",
-            error: errors
+            message: "Validation Error"
+            // error: errors
         };
         res.json(result);
     }
 });
+
  /**
  * @api {post} /users/send_contact User's contact card which will be send to any user
  * @apiName Send Contact
