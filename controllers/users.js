@@ -228,7 +228,6 @@ router.put('/updateProfile', function (req, res, next) {
  * 
  * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {String} error optional to describe error
  */
 router.post('/change_number', function (req, res, next) {
     // creating schema for validation
@@ -243,52 +242,45 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        user.findOne({mobile_no: req.userInfo.mobile_no}, function (err, userData) {
-            if (err)
-            {
+        user.findOne({mobileNo: req.userInfo.mobileNo}, function (err, userData) {
+            if (err) {
                 // Error in find user
                 result = {
                     success: 0,
-                    message: "Error in find user",
-                    error: errors
+                    message: "Error in find user"
+                    //error: errors
                 };
                 res.json(result);
-            } else
-            {
+            } else {
                 // error is not occured
-                if (userData)
-                {
+                if (userData) {
                     // Found user in database
-                    user.findOne({mobile_no: req.body.new_phone}, function (err, newUserData) {
+                    user.findOne({mobileNo: req.body.new_phone}, function (err, newUserData) {
                         // finding new number is already registered or not
-                        if (err)
-                        {
+                        if (err) {
                             // Error in find operation
                             result = {
                                 success: 0,
-                                message: "Error in find user",
-                                error: errors
+                                message: "Error in find user"
+                                //error: errors
                             };
                             res.json(result);
-                        } else
-                        {
-                            if (newUserData)
-                            {
+                        } else {
+                            if (newUserData) {
                                 // User is already available in database
                                 result = {
                                     success: 0,
-                                    message: "New number is already available in database",
-                                    error: errors
+                                    message: "New number is already available in database"
+                                    //error: errors
                                 };
                                 res.json(result);
-                            } else
-                            {
+                            } else {
                                 // Send OTP to update new number
-                                otp.findOne({mobile_no: req.body.new_phone}, function (err, otpData) {
+                                otp.findOne({mobileNo: req.body.new_phone}, function (err, otpData) {
                                     if (err) {
                                         result = {
                                             success: 0,
-                                            message: "Error in find OTP",
+                                            message: "Error in send OTP",
                                             error: errors
                                         };
                                         res.json(result);
