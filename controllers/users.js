@@ -172,9 +172,11 @@ router.post('/uploadImage', function (req, res, next) {
  */
 router.put('/updateProfile', function (req, res, next) {
     var json = req.body;
+    console.log("JSON:",json);
     var userInfo = req.userInfo;
     if (req.files) {
         var file = req.files.file;
+        console.log("file:",file);
         var dir = "./upload/" + userInfo.id;
         var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
         console.log("index:", mimetype.indexOf(file.mimetype));
@@ -198,7 +200,7 @@ router.put('/updateProfile', function (req, res, next) {
                     if (req.body) {
                         data = req.body;
                     }
-                    data.image_path = imagepath;
+                    data.image = imagepath;
                     updateUser(userInfo.id, data, res);
                 }
             });
