@@ -489,7 +489,99 @@ router.post('/verifyOTP', function (req, res, next) {
         res.json(result);
     }
 });
+ /**
+ * @api {post} /users/send_contact User's contact card which will be send to any user
+ * @apiName Send Contact
+ * @apiGroup User
+ * 
+ * @apiParam {Array} contacts raw data : Array of object [{mobile_no:contact_no}]. User's contact list 
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key.
+ * 
+ * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {String} message Validation or success message.
+ * @apiSuccess {String} error optional to describe error
+ */
+router.post('/send_card', function(req, res, next){
+    var schema = {
+        'contacts': {
+            notEmpty: true,
+            errorMessage: "To sync contact, contacts are required."
+        }
+    };
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+    if(!errors) {
+         var contactList = _.pluck(req.body.contacts,"mobile_no");
+        user.findOne({'_id' : req.userInfo.id}, function(err, user) {
+            if(err) {
+                var result = {
+                    success: 0,
+                    message: "Error in finding user",
+                    error: err
+                };
+                res.json(result);
+            } else {
 
+                user.find({}, function(err, users){
+                    res.json(users);
+                });
+
+
+
+
+
+                // Find contact of user from db
+                user.find({}, function(err, contactData){
+                    if (err) {
+                        var result = {
+                            success: 0,
+                            message: "Error in finding user contact.",
+                            error: err
+                        };
+                        res.json(result);
+                    } else {
+                        // _.each(contactList, function(con){
+                        //     if(contactData.length == 0) {
+                        //         var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                        //         msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
+                        //         send_card(con, msg);
+                        //         console.log('send sms', msg);
+                        //     } else {
+                        //             var flag = 0;
+                        //         _.each(contactData, function(condt){
+                        //             if(condt.mobile_no == con && condt.is_gleekr_contact) {
+                        //                 flag = 1;
+                        //             }
+                        //         });
+                        //         if(flag == 1) {
+                        //             console.log(con +' is gleekr contact.');
+                        //         } else {
+                        //             var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                        //             msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
+                        //             send_card(con, msg);
+                        //         }
+                        //     }
+                        // });
+                        console.log(contactData);
+                        var result = {
+                            success: 1,
+                            message: "Contact card send successfully."
+                        };
+                        res.json(result);
+                    }
+                });
+            }
+        });
+    } else {
+        var result = {
+            success: 0,
+            message: "Validation Error",
+            error: errors
+        };
+        res.json(result);
+    }
+});
 function updateUser(id, data, res) {
     user.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
         if (err) {
