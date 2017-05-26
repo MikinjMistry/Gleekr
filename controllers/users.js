@@ -511,7 +511,7 @@ router.post('/send_card', function(req, res, next){
     var errors = req.validationErrors();
     if(!errors) {
          var contactList = _.pluck(req.body.contacts,"mobile_no");
-        user.findOne({'_id' : req.userInfo.id}, function(err, user) {
+        user.findOne({'_id' : req.userInfo.id}, function(err, userdata) {
             if(err) {
                 var result = {
                     success: 0,
