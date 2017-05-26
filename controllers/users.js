@@ -172,14 +172,11 @@ router.post('/uploadImage', function (req, res, next) {
  */
 router.put('/updateProfile', function (req, res, next) {
     var json = req.body;
-    console.log("JSON:",json);
     var userInfo = req.userInfo;
     if (req.files) {
         var file = req.files.file;
-        console.log("file:",file);
         var dir = "./upload/" + userInfo.id;
         var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
-        console.log("index:", mimetype.indexOf(file.mimetype));
         if (mimetype.indexOf(file.mimetype) != -1) {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir);
@@ -214,7 +211,6 @@ router.put('/updateProfile', function (req, res, next) {
         }
     } else {
         data = req.body;
-        console.log("data:", req.body);
         updateUser(userInfo.id, data, res);
     }
 });
