@@ -530,45 +530,45 @@ router.post('/send_card', function(req, res, next){
 
 
                 // Find contact of user from db
-                user.find({}, function(err, contactData){
-                    if (err) {
-                        var result = {
-                            success: 0,
-                            message: "Error in finding user contact.",
-                            error: err
-                        };
-                        res.json(result);
-                    } else {
-                        // _.each(contactList, function(con){
-                        //     if(contactData.length == 0) {
-                        //         var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                        //         msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
-                        //         send_card(con, msg);
-                        //         console.log('send sms', msg);
-                        //     } else {
-                        //             var flag = 0;
-                        //         _.each(contactData, function(condt){
-                        //             if(condt.mobile_no == con && condt.is_gleekr_contact) {
-                        //                 flag = 1;
-                        //             }
-                        //         });
-                        //         if(flag == 1) {
-                        //             console.log(con +' is gleekr contact.');
-                        //         } else {
-                        //             var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                        //             msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
-                        //             send_card(con, msg);
-                        //         }
-                        //     }
-                        // });
-                        console.log(contactData);
-                        var result = {
-                            success: 1,
-                            message: "Contact card send successfully."
-                        };
-                        res.json(result);
-                    }
-                });
+                // user.find({}, function(err, contactData){
+                //     if (err) {
+                //         var result = {
+                //             success: 0,
+                //             message: "Error in finding user contact.",
+                //             error: err
+                //         };
+                //         res.json(result);
+                //     } else {
+                //         // _.each(contactList, function(con){
+                //         //     if(contactData.length == 0) {
+                //         //         var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                //         //         msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
+                //         //         send_card(con, msg);
+                //         //         console.log('send sms', msg);
+                //         //     } else {
+                //         //             var flag = 0;
+                //         //         _.each(contactData, function(condt){
+                //         //             if(condt.mobile_no == con && condt.is_gleekr_contact) {
+                //         //                 flag = 1;
+                //         //             }
+                //         //         });
+                //         //         if(flag == 1) {
+                //         //             console.log(con +' is gleekr contact.');
+                //         //         } else {
+                //         //             var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                //         //             msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
+                //         //             send_card(con, msg);
+                //         //         }
+                //         //     }
+                //         // });
+                //         console.log(contactData);
+                //         var result = {
+                //             success: 1,
+                //             message: "Contact card send successfully."
+                //         };
+                //         res.json(result);
+                //     }
+                // });
             }
         });
     } else {
