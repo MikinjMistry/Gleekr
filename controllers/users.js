@@ -177,7 +177,6 @@ router.put('/updateProfile', function (req, res, next) {
         var file = req.files.file;
         var dir = "./upload/" + userInfo.id;
         var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
-        console.log("index:", mimetype.indexOf(file.mimetype));
         if (mimetype.indexOf(file.mimetype) != -1) {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir);
@@ -198,7 +197,7 @@ router.put('/updateProfile', function (req, res, next) {
                     if (req.body) {
                         data = req.body;
                     }
-                    data.image_path = imagepath;
+                    data.image = imagepath;
                     updateUser(userInfo.id, data, res);
                 }
             });
@@ -212,7 +211,6 @@ router.put('/updateProfile', function (req, res, next) {
         }
     } else {
         data = req.body;
-        console.log("data:", req.body);
         updateUser(userInfo.id, data, res);
     }
 });
