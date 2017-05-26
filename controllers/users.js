@@ -504,7 +504,7 @@ router.post('/send_card', function(req, res, next){
     var errors = req.validationErrors();
     if(!errors) {
          var contactList = _.pluck(req.body.contacts,"mobile_no");
-        user.findOne({'_id' : req.userInfo.id}, function(err, user) {
+        user.findOne({'_id' : req.userInfo.id}, function(err, userdata) {
             if(err) {
                 var result = {
                     success: 0,
@@ -513,55 +513,25 @@ router.post('/send_card', function(req, res, next){
                 };
                 res.json(result);
             } else {
-
-                user.find({}, function(err, users){
-                    res.json(users);
+                
+                _.each(contactList, function(con) {
+                    user.findOne({mobileNo : con}, function(err, data){
+                        if(data != null) {
+                            console.log('Gleekr contact');
+                        } else {
+                            console.log('Not Gleekr user');
+                            var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                            msg += 'Contact : '+userdata.mobileNo+'\nEmail id : '+(typeof userdata.email != 'undefined' ? userdata.email : '-')+'\nJob title : '+(typeof userdata.job_title != 'undefined' ? userdata.job_title : '-' )+'\nCompany : '+(typeof userdata.company_name != 'undefined' ? userdata.company_name : '-');
+                            console.log(msg);
+                            send_card(con, msg);
+                        }
+                    });
                 });
-
-
-
-
-
-                // Find contact of user from db
-                user.find({}, function(err, contactData){
-                    if (err) {
-                        var result = {
-                            success: 0,
-                            message: "Error in finding user contact.",
-                            error: err
-                        };
-                        res.json(result);
-                    } else {
-                        // _.each(contactList, function(con){
-                        //     if(contactData.length == 0) {
-                        //         var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                        //         msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
-                        //         send_card(con, msg);
-                        //         console.log('send sms', msg);
-                        //     } else {
-                        //             var flag = 0;
-                        //         _.each(contactData, function(condt){
-                        //             if(condt.mobile_no == con && condt.is_gleekr_contact) {
-                        //                 flag = 1;
-                        //             }
-                        //         });
-                        //         if(flag == 1) {
-                        //             console.log(con +' is gleekr contact.');
-                        //         } else {
-                        //             var msg = (typeof user.name != 'undefined' ? user.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                        //             msg += 'Contact : '+user.mobile_no+'\nEmail id : '+(typeof user.email != 'undefined' ? user.email : '-')+'\nJob title : '+(typeof user.job_title != 'undefined' ? user.job_title : '-' )+'\nCompany : '+(typeof user.company_name != 'undefined' ? user.company_name : '-');
-                        //             send_card(con, msg);
-                        //         }
-                        //     }
-                        // });
-                        console.log(contactData);
-                        var result = {
+                var result = {
                             success: 1,
                             message: "Contact card send successfully."
                         };
-                        res.json(result);
-                    }
-                });
+                res.json(result);
             }
         });
     } else {
