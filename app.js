@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('./config');
 var db = require('./models/db');
+var mosca = require('./mqttBroker');
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
 
