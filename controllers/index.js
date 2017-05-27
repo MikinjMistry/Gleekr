@@ -4,6 +4,7 @@ var router = express.Router();
 var moment = require('moment');
 var jwt = require('jsonwebtoken');
 var twilio = require('twilio');
+var VoiceResponse = twilio.twiml.VoiceResponse;
 var user = require("../models/user");
 var otp = require("../models/otp");
 require('dotenv').config();
@@ -247,7 +248,7 @@ router.post('/voiceCall',function(req, res,next){
         from:process.env.TWILIO_NUMBER,
         url: url,
     };
-
+    console.log("option:",options);
     // Place an outbound call to the user, using the TwiML instructions
     // from the /outbound route
     client.calls.create(options)
