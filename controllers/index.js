@@ -238,6 +238,47 @@ router.post('/verifyOTP', function (req, res, next) {
     }
 });
 
+router.post('/voiceCall',function(req, res,next){
+    var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    var url = 'http://35.154.229.129:4000/outbound/' + encodeURIComponent(req.body.mobileNo);
+
+    var options = {
+        to: req.body.mobileNo,
+        from:process.env.TWILIO_NUMBER,
+        url: url,
+    };
+
+    // Place an outbound call to the user, using the TwiML instructions
+    // from the /outbound route
+    client.calls.create(options)
+      .then((message) => {
+        console.log(message.responseText);
+        response.send({
+            message: 'Thank you! We will be calling you shortly.',
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        response.status(500).send(error);
+      });
+});
+
+router.post('/outbound/:salesNumber', function(request, response) {
+    var salesNumber = request.params.salesNumber;
+    console.log("salesNumber:",salesNumber);
+    var twimlResponse = new VoiceResponse();
+
+    twimlResponse.say('Thanks for contacting our sales department. Our ' +
+                      'next available representative will take your call. ',
+                      { voice: 'alice' });
+
+    twimlResponse.dial(salesNumber);
+
+    response.send(twimlResponse.toString());
+});
+
+
+
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
     var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
