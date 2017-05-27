@@ -269,8 +269,7 @@ router.post('/outbound/:salesNumber', function(request, response) {
     console.log("salesNumber:",salesNumber);
     var twimlResponse = new VoiceResponse();
 
-    twimlResponse.say('Thanks for contacting our sales department. Our ' +
-                      'next available representative will take your call. ',
+    twimlResponse.say('Your Glekr OTP will be 15254',
                       { voice: 'alice' });
 
     twimlResponse.dial(salesNumber);
