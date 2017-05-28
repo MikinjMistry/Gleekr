@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+var config = require('../config');
 var moment = require('moment');
 var jwt = require('jsonwebtoken');
 var twilio = require('twilio');
@@ -136,8 +136,8 @@ router.post('/verifyOTP', function (req, res, next) {
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
                 console.log("duration:", duration);
-                console.log("otptime:", process.env.OTP_EXPIRETION);
-                if (duration > process.env.OTP_EXPIRETION) {
+                console.log("otptime:", config.OTP_EXPIRETION);
+                if (duration > config.OTP_EXPIRETION) {
                     var result = {
                         success: 0,
                         message: "Your OTP code is expired",
@@ -157,7 +157,7 @@ router.post('/verifyOTP', function (req, res, next) {
                         }
                         if (userData) {
                             var userJson = {id: userData._id, mobileNo: userData.mobileNo};
-                            var token = jwt.sign(userJson, process.env.JWT_SECRET, {
+                            var token = jwt.sign(userJson, config.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
                             otp.remove({_id: otpData._id}, function (err) {
@@ -188,7 +188,7 @@ router.post('/verifyOTP', function (req, res, next) {
                                     res.json(result);
                                 } else {
                                     var userJson = {id: responce._id, mobileNo: responce.mobileNo};
-                                    var token = jwt.sign(userJson, process.env.JWT_SECRET, {
+                                    var token = jwt.sign(userJson, config.JWT_SECRET, {
                                         expiresIn: 60 * 60 * 24 // expires in 24 hours
                                     });
                                     otp.remove({_id: otpData._id}, function (err) {
@@ -239,52 +239,116 @@ router.post('/verifyOTP', function (req, res, next) {
     }
 });
 
-router.post('/voiceCall',function(req, res,next){
-    var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    var url = 'http://35.154.229.129:4000/outbound/' + encodeURIComponent(req.body.mobileNo);
 
-    var options = {
-        to: req.body.mobileNo,
-        from:process.env.TWILIO_NUMBER,
-        url: url,
+/**
+ * @api {post} /voiceCall
+ * @apiName Send OTP through call
+ * @apiGroup Root
+ * 
+ * @apiParam {String} mobileNo mobile number with contry code
+ * 
+ * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {String} message Validation or success message.
+ * @apiSuccess {String} Error error message.
+ */
+router.post('/voiceCall',function(req, res,next){
+    var schema = {
+        'mobileNo': {
+            notEmpty: true,
+            errorMessage: "mobile number is required to made call."
+        }
     };
-    console.log("option:",options);
-    // Place an outbound call to the user, using the TwiML instructions
-    // from the /outbound route
-    client.calls.create(options)
-      .then((message) => {
-        console.log(message.responseText);
-        res.send({
-            message: 'Thank you! We will be calling you shortly.',
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+    var result = {};
+    if (!errors) {
+        var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
+        var url = 'http://'+config.REMOTE_HOST+':'+config.node_port+'/outbound/' + encodeURIComponent(req.body.mobileNo);
+
+        var options = {
+            to: req.body.mobileNo,
+            from:config.TWILIO_NUMBER,
+            url: url,
+        };
+        console.log("option:",options);
+        client.calls.create(options).then((message) => {
+            res.send({
+                message: 'OTP has been sent via call on given number.',
+            });
+        }).catch((error) => {
+            res.status(500).send(error);
         });
-      })
-      .catch((error) => {
-        console.log(error);
-        res.status(500).send(error);
-      });
+    }
 });
 
-router.post('/outbound/:salesNumber', function(request, response) {
-    var salesNumber = request.params.salesNumber;
-    console.log("salesNumber:",salesNumber);
+router.post('/outbound/:mobileNo', function(request, response) {
+    var mobileNo = request.params.mobileNo;
     var twimlResponse = new VoiceResponse();
-
-    twimlResponse.say('Your Glekr OTP will be 15254',
+    var code = Math.floor(1000 + Math.random() * 9000);
+    otp.findOne({mobileNo: mobileNo}, function (err, otpData) {
+        if (err) {
+            result = {
+                success: 0,
+                message: "Error in find OTP",
+                error: errors
+            };
+            res.json(result);
+        }
+        if (otpData) {
+            var json = {code: code, modified_datetime: new Date()};
+            otp.update({_id: {$eq: otpData._id}}, {$set: json}, function (err, responce) {
+                if (err) {
+                    result = {
+                        success: 0,
+                        message: "Error in updating OTP",
+                        error: err
+                    };
+                    res.json(result);
+                } else {
+                    twimlResponse.say('Your Gleekr OTP is '+code,
                       { voice: 'alice' });
 
-    twimlResponse.dial(salesNumber);
+                    twimlResponse.dial(mobileNo);
 
-    response.send(twimlResponse.toString());
+                    response.send(twimlResponse.toString());
+                }
+            });
+        } else {
+            var json = {
+                'mobileNo': mobileNo,
+                'code': code
+            };
+            var otpObject = new otp(json);
+            otpObject.save(function (err, data) {
+                if (err) {
+                    result = {
+                        success: 0,
+                        message: "Error in inserting OTP",
+                        error: err
+                    };
+                    res.json(result);
+                } else {
+                    twimlResponse.say('Your Gleekr OTP is '+code,
+                      { voice: 'alice' });
+
+                    twimlResponse.dial(mobileNo);
+
+                    response.send(twimlResponse.toString());
+                }
+            });
+        }
+    });
+    
 });
 
 
 
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
-    var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
     client.messages.create({
         to: number,
-        from: process.env.TWILIO_NUMBER,
+        from: config.TWILIO_NUMBER,
         body: 'Use ' + code + ' as Gleekr account security code'
     }, function (error, message) {
         if (!error) {
