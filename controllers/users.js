@@ -523,6 +523,8 @@ router.post('/send_card', function(req, res, next){
                                '\nCompany : '+userdata.company_name ? userdata.company_name : '-';
                         if(data != null) {
                             console.log('Gleekr contact','user_'+data._id);
+                            console.log('Gleekr contact',msg);
+                            
                             client.publish('user_'+data._id,msg);
                         } else {
                             console.log('Not Gleekr user');
