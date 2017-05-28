@@ -14,6 +14,8 @@ require('dotenv').config();
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
 
+var moscaServer = require('../mqttBroker');
+
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
     var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -516,12 +518,16 @@ router.post('/send_card', function(req, res, next){
                 
                 _.each(contactList, function(con) {
                     user.findOne({mobileNo : con}, function(err, data){
+                        var msg = (userdata.name ? userdata.name : 'Your firend')+' has sent his card from Gleekr.\n';
+                        msg += 'Contact : '+userdata.mobileNo +
+                               '\nEmail id : '+ userdata.email ? userdata.email : '-'+
+                               '\n\n\Job title : '+userdata.job_title ? userdata.job_title : '-'+
+                               '\nCompany : '+userdata.company_name ? userdata.company_name : '-';
                         if(data != null) {
-                            console.log('Gleekr contact');
+                            console.log('Gleekr contact','user_'+data._id);
+                            moscaServer.publish('user_'+data._id,msg);
                         } else {
                             console.log('Not Gleekr user');
-                            var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                            msg += 'Contact : '+userdata.mobileNo+'\nEmail id : '+(typeof userdata.email != 'undefined' ? userdata.email : '-')+'\nJob title : '+(typeof userdata.job_title != 'undefined' ? userdata.job_title : '-' )+'\nCompany : '+(typeof userdata.company_name != 'undefined' ? userdata.company_name : '-');
                             console.log(msg);
                             send_card(con, msg);
                         }
