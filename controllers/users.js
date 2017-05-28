@@ -13,9 +13,7 @@ require('dotenv').config();
 
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
-
-var moscaServer = require('../mqttBroker');
-
+var client = require('../mqtt/mqttClient');
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
     var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -525,7 +523,7 @@ router.post('/send_card', function(req, res, next){
                                '\nCompany : '+userdata.company_name ? userdata.company_name : '-';
                         if(data != null) {
                             console.log('Gleekr contact','user_'+data._id);
-                            moscaServer.publish('user_'+data._id,msg);
+                            client.publish('user_'+data._id,msg);
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
