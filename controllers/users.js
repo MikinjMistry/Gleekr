@@ -516,8 +516,8 @@ router.post('/send_card', function(req, res, next){
                 
                 _.each(contactList, function(con) {
                     user.findOne({mobileNo : con}, function(err, data){
-                        var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your firend')+' has sent his card from Gleekr.\n';
-                        msg += 'Contact : '+userdata.mobileNo+'\nEmail id : '+(typeof userdata.email != 'undefined' ? userdata.email : '-')+'\nJob title : '+(typeof userdata.job_title != 'undefined' ? userdata.job_title : '-' )+'\nCompany : '+(typeof userdata.company_name != 'undefined' ? userdata.company_name : '-');
+                        var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your friend')+' has sent his card from Gleekr.\n';
+                        msg += 'Contact : '+userdata.mobileNo+'\nEmail id : '+(typeof userdata.email != 'undefined' ? userdata.email : '-')+'\nJob title : '+(typeof userdata.jobTitle != 'undefined' ? userdata.jobTitle : '-' )+'\nCompany : '+(typeof userdata.companyName != 'undefined' ? userdata.companyName : '-');
                         if(data != null) {
                             console.log('Gleekr contact','user_'+data._id);
                             console.log('Gleekr contact',msg);
