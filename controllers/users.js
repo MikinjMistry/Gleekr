@@ -269,21 +269,18 @@ router.post('/change_number', function (req, res, next) {
                 } else {
                     // User not found
                     result = {
-                        success: 0,
                         message: "User not available in database"
-                        //error: err
                     };
-                    res.json(result);
+                    res.status(400).json(result);
                 }
             }
         });
     } else {
         result = {
-            success: 0,
-            message: "Validation Error"
-            //error: errors
+            message: "Validation Error",
+            error: errors
         };
-        res.json(result);
+        res.status(400).json(result);
     }
 });
 
@@ -472,19 +469,17 @@ router.post('/send_card', function(req, res, next){
                     });
                 });
                 var result = {
-                            success: 1,
                             message: "Contact card send successfully."
                         };
-                res.json(result);
+                res.status(200).json(result)
             }
         });
     } else {
         var result = {
-            success: 0,
             message: "Validation Error",
             error: errors
         };
-        
+        res.status(400).json(result)
     }
 });
 function updateUser(id, data, res) {
