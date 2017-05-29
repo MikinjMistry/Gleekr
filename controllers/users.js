@@ -66,14 +66,13 @@ var send_card = function (number, msg) {
  *
  * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {Json} data mobile_no,email,image_path,job_title,company_name.
+ * @apiSuccess {Json} data mobileNo,email,image_path,job_title,company_name.
  */
 router.get('/', function (req, res, next) {
     user.findOne({'_id': req.userInfo.id}, function (err, user) {
         if (err) {
             result = {
-                message: "Error in get user profile",
-                error: err
+                message: "Error in get user profile"
             };
             res.status(422).json(result);
         } else {
@@ -100,8 +99,7 @@ router.delete('/deleteAccount', function (req, res, next) {
     user.update({_id: {$eq: req.userInfo.id}}, {$set: json}, function (err, responce) {
         if (err) {
             result = {
-                message: "Error in removing use account",
-                error: err
+                message: "Error in removing use account"
             };
             res.status(422).json(result);
         } else {
