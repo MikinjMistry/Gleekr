@@ -164,7 +164,7 @@ router.put('/updateProfile', function (req, res, next) {
                 message: "This File format is not allowed",
                 error: []
             };
-            res.status(400).json(result);
+            res.status(417).json(result);
         }
     } else {
         data = req.body;
@@ -222,7 +222,7 @@ router.post('/change_number', function (req, res, next) {
                                 result = {
                                     message: "New number is already available in database"
                                 };
-                                res.status(400).json(result);
+                                res.status(417).json(result);
                             } else {
                                 // Send OTP to update new number
                                 otp.findOne({mobileNo: req.body.new_phone}, function (err, otpData) {
@@ -231,7 +231,7 @@ router.post('/change_number', function (req, res, next) {
                                             message: "Error in send OTP"
                                             //error: errors
                                         };
-                                        res.status(400).json(result);
+                                        res.status(417).json(result);
                                     }
                                     if (otpData) {
                                         var json = {code: code, modified_datetime: new Date()};
@@ -271,7 +271,7 @@ router.post('/change_number', function (req, res, next) {
                     result = {
                         message: "User not available in database"
                     };
-                    res.status(400).json(result);
+                    res.status(417).json(result);
                 }
             }
         });
@@ -280,7 +280,7 @@ router.post('/change_number', function (req, res, next) {
             message: "Validation Error",
             error: errors
         };
-        res.status(400).json(result);
+        res.status(417).json(result);
     }
 });
 
@@ -358,14 +358,14 @@ router.post('/verifyOTP', function (req, res, next) {
                     });
 
                 } else {
-                    res.status(400).json({message: "OTP is wrong"});
+                    res.status(417).json({message: "OTP is wrong"});
                 }
             } else {
-                res.status(400).json({message: "Mobile number has not requested for sendOTP"});
+                res.status(417).json({message: "Mobile number has not requested for sendOTP"});
             }
         });
     } else {
-        res.status(400).json({message: "Validation Error : "+errors});
+        res.status(417).json({message: "Validation Error : "+errors});
     }
 });
 
@@ -425,7 +425,7 @@ router.post('/send_card', function(req, res, next){
             message: "Validation Error",
             error: errors
         };
-        res.status(400).json(result)
+        res.status(417).json(result)
     }
 });
 function updateUser(id, data, res) {
