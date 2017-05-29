@@ -368,17 +368,16 @@ router.post('/verifyOTP', function (req, res, next) {
 });
 
  /**
- * @api {post} /users/send_contact User's contact card which will be send to any user
- * @apiName Send Contact
+ * @api {post} /users/send_card User's contact card which will be send to any user
+ * @apiName Send Contact Card
  * @apiGroup User
  * 
  * @apiParam {Array} contacts raw data : Array of object [{mobile_no:contact_no}]. User's contact list 
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {Number} Success 417,422 : Fail and 200 : Success.
  * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {String} error optional to describe error
  */
 router.post('/send_card', function(req, res, next){
     var schema = {
@@ -420,8 +419,7 @@ router.post('/send_card', function(req, res, next){
         });
     } else {
         var result = {
-            message: "Validation Error",
-            error: errors
+            message: errors
         };
         res.status(417).json(result)
     }
