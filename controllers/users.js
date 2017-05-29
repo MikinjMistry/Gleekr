@@ -24,17 +24,11 @@ var sendMessage = function (number, code, res) {
     }, function (error, message) {
         if (!error) {
             result = {
-                success: 1,
                 message: "OTP has been sent successfully."
             };
-            res.json(result);
+            res.status(200).json(result);
         } else {
-            var result = {
-                success: 0,
-                message: "Error in sending sms.",
-                error: error
-            };
-            res.json(result);
+            res.status(422).json({ message: "Error in sending sms." });
         }
     });
 }
@@ -78,18 +72,15 @@ router.get('/', function (req, res, next) {
     user.findOne({'_id': req.userInfo.id}, function (err, user) {
         if (err) {
             result = {
-                success: 0,
                 message: "Error in get user profile",
                 error: err
             };
-            res.json(result);
+            res.status(422).json(result);
         } else {
             var result = {
-                success: 1,
-                message: "",
                 data: user
             };
-            res.json(result);
+            res.status(200).json(result);                
         }
     });
 });
@@ -109,49 +100,17 @@ router.delete('/deleteAccount', function (req, res, next) {
     user.update({_id: {$eq: req.userInfo.id}}, {$set: json}, function (err, responce) {
         if (err) {
             result = {
-                success: 0,
                 message: "Error in removing use account",
                 error: err
             };
-            res.json(result);
+            res.status(422).json(result);
         } else {
             var result = {
-                success: 1,
                 message: "Your account removed successfully."
             };
-            res.json(result);
+            res.status(200).json(result);
         }
     });
-});
-
-router.post('/uploadImage', function (req, res, next) {
-    file = req.files.file;
-    console.log("file:", file);
-    if (file) {
-        file.mv('./upload/profile.jpg', function (err) {
-            if (err) {
-                result = {
-                    success: 0,
-                    message: "Error in profile image upload",
-                    error: err
-                };
-                res.json(result);
-            } else {
-                result = {
-                    success: 1,
-                    message: "File is uploaded successfully",
-                };
-                res.json(result);
-            }
-        });
-    } else {
-        result = {
-            success: 0,
-            message: "Image is not provided",
-            error: []
-        };
-        res.json(result);
-    }
 });
 
 /**
@@ -186,11 +145,10 @@ router.put('/updateProfile', function (req, res, next) {
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
                     result = {
-                        success: 0,
                         message: "Error in profile image upload",
                         error: err
                     };
-                    res.json(result);
+                    res.status(415).json(result);
                 } else {
                     imagepath = "/upload/" + userInfo.id + "/" + filename;
                     data = {};
@@ -203,11 +161,10 @@ router.put('/updateProfile', function (req, res, next) {
             });
         } else {
             result = {
-                success: 0,
                 message: "This File format is not allowed",
                 error: []
             };
-            res.json(result);
+            res.status(400).json(result);
         }
     } else {
         data = req.body;
@@ -244,11 +201,9 @@ router.post('/change_number', function (req, res, next) {
             if (err) {
                 // Error in find user
                 result = {
-                    success: 0,
                     message: "Error in find user"
-                    //error: errors
                 };
-                res.json(result);
+                res.status(422).json(result);
             } else {
                 // error is not occured
                 if (userData) {
@@ -258,41 +213,34 @@ router.post('/change_number', function (req, res, next) {
                         if (err) {
                             // Error in find operation
                             result = {
-                                success: 0,
                                 message: "Error in find user"
-                                //error: errors
                             };
-                            res.json(result);
+                            res.status(422).json(result);
                         } else {
                             if (newUserData) {
                                 // User is already available in database
                                 result = {
-                                    success: 0,
                                     message: "New number is already available in database"
-                                    //error: errors
                                 };
-                                res.json(result);
+                                res.status(400).json(result);
                             } else {
                                 // Send OTP to update new number
                                 otp.findOne({mobileNo: req.body.new_phone}, function (err, otpData) {
                                     if (err) {
                                         result = {
-                                            success: 0,
                                             message: "Error in send OTP"
                                             //error: errors
                                         };
-                                        res.json(result);
+                                        res.status(400).json(result);
                                     }
                                     if (otpData) {
                                         var json = {code: code, modified_datetime: new Date()};
                                         otp.update({_id: {$eq: otpData._id}}, {$set: json}, function (err, responce) {
                                             if (err) {
                                                 result = {
-                                                    success: 0,
                                                     message: "Error in updating OTP"
-                                                    //error: err
                                                 };
-                                                res.json(result);
+                                                res.status(422).json(result);
                                             } else {
                                                 sendMessage(req.body.new_phone, code, res);
                                             }
@@ -306,11 +254,9 @@ router.post('/change_number', function (req, res, next) {
                                         otpObject.save(function (err, data) {
                                             if (err) {
                                                 result = {
-                                                    success: 0,
                                                     message: "Error in inserting OTP"
-                                                    //error: err
                                                 };
-                                                res.json(result);
+                                                res.status(422).json(result);
                                             } else {
                                                 sendMessage(req.body.new_phone, code, res);
                                             }
@@ -323,21 +269,18 @@ router.post('/change_number', function (req, res, next) {
                 } else {
                     // User not found
                     result = {
-                        success: 0,
                         message: "User not available in database"
-                        //error: err
                     };
-                    res.json(result);
+                    res.status(400).json(result);
                 }
             }
         });
     } else {
         result = {
-            success: 0,
-            message: "Validation Error"
-            //error: errors
+            message: "Validation Error",
+            error: errors
         };
-        res.json(result);
+        res.status(400).json(result);
     }
 });
 
@@ -506,12 +449,7 @@ router.post('/send_card', function(req, res, next){
          var contactList = _.pluck(req.body.contacts,"mobile_no");
         user.findOne({'_id' : req.userInfo.id}, function(err, userdata) {
             if(err) {
-                var result = {
-                    success: 0,
-                    message: "Error in finding user",
-                    error: err
-                };
-                res.json(result);
+                res.status(422).json({ message: "Error in finding user." });
             } else {
                 
                 _.each(contactList, function(con) {
@@ -531,36 +469,32 @@ router.post('/send_card', function(req, res, next){
                     });
                 });
                 var result = {
-                            success: 1,
                             message: "Contact card send successfully."
                         };
-                res.json(result);
+                res.status(200).json(result)
             }
         });
     } else {
         var result = {
-            success: 0,
             message: "Validation Error",
             error: errors
         };
-        res.json(result);
+        res.status(400).json(result)
     }
 });
 function updateUser(id, data, res) {
     user.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
         if (err) {
             result = {
-                success: 0,
                 message: "Error in updating profile",
                 error: err
             };
-            res.json(result);
+            res.status(422).json(result);
         } else {
             var result = {
-                success: 1,
                 message: "Profile updated successfully",
             };
-            res.json(result);
+            res.status(200).json(result);
         }
     });
 }

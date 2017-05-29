@@ -6,17 +6,15 @@ module.exports = function (req, res, next) {
     if (token) {
         jwt.verify(token,process.env.JWT_SECRET, function (err, decoded) {
             if (err) {
-                return res.json({success: 0, message: 'Failed to authenticate token.',error:[]});
+                return res.status(401).json({message: 'Invalid token'});
             } else {
                 req.userInfo = decoded;
                 next();
             }
         });
     } else {
-        return res.json({
-            success: 0,
-            message: 'No token provided.',
-            error:[]
+        return res.status(400).json({
+            message: 'No token provided'
         });
     }
 }
