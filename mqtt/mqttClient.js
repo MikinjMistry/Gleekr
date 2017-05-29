@@ -1,6 +1,6 @@
 var mqtt = require("mqtt");
 var config = require('../config');
-var url = 'mqtt://'+config.REMOTE_HOST+':1883';
+var url = 'mqtt://'+config.HOST+':1883';
 var client = mqtt.connect(url);
 /*** client on connect ***/
 client.on("connect", function() {
