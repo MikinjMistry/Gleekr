@@ -106,6 +106,7 @@ router.post('/verifyOTP', function (req, res, next) {
             if (err) {
                 res.status(422).json({message: "Error in finding user with otp"});
             }
+            console.log("otpData",otpData);
             if (otpData) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
@@ -160,7 +161,7 @@ router.post('/verifyOTP', function (req, res, next) {
             }
         });
     } else {
-        res.status(417).json({message: erros});
+        res.status(417).json({message:errors});
     }
 });
 
