@@ -52,7 +52,7 @@ router.post('/insert', function(req, res, next) {
                 if (err) {
                     result = {
                         success: 0,
-                        message: "Error in profile image upload",
+                        message: "Error in activity image upload",
                         error: err
                     };
 					res.json(result);
@@ -111,35 +111,90 @@ router.post('/insert', function(req, res, next) {
 	}
 });
 
-/* Edit activity */
+/**
+ * @api {put} /activities/update
+ * @apiName Update Activity
+ * @apiGroup Activity
+ * @apiDescription You need to pass Form Data
+ * 
+ * @apiParam {file} photo form-data: file object for image [jpg,png]
+ * @apiParam {String} name  form-data: Activity name
+ * @apiParam {Date} startDate form-data: Activity start date 
+ * @apiParam {Date} startTime form-data: Activity start time
+ * @apiParam {Date} endDate form-data: Activity end time
+ * @apiParam {Date} endTime form-data: Activity end time
+ * @apiParam {String} location form-data: Activity location
+ * @apiParam {String} description form-data: Activity description
+ * @apiParam {Number} noOfParticipants form-data: Number of participants
+ * @apiParam {Number} costPerPerson form-data: cost per person
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key.
+ * 
+ * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {String} message Validation or success message.
+ */
 router.post('/update',function(req,res,next){
 	var json = req.body;
-    activity.update({_id: {$eq: req.body.id}}, {$set: json}, function (err, responce) {
-        if (err) {
+    if (req.files) {
+        var file = req.files.file;
+        var dir = "./upload/activity";
+        var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
+        if (mimetype.indexOf(file.mimetype) != -1) {
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir);
+            }
+            extention = path.extname(file.name);
+            filename = new Date().getTime() + extention;
+            file.mv(dir + '/' + filename, function (err) {
+                if (err) {
+                    result = {
+                        success: 0,
+                        message: "Error in activity image upload",
+                        error: err
+                    };
+                    res.json(result);
+                } else {
+                    data = {};
+                    if (req.body) {
+                        data = req.body;
+                    }
+                    data.photo = "/upload/activity/" + filename;
+                    updateActivity(userInfo.id, data, res);
+                }
+            });
+        } else {
             result = {
                 success: 0,
-                message: "Activity updation process has been failed",
-                error: err
+                message: "This File format is not allowed",
+                error: []
             };
-        } else {
-            var result = {
-                success: 1,
-                message: "Activity has been updated."
-            };
+            res.json(result);
         }
-		res.json(result);
-    });
+    } else {
+        data = req.body;
+        updateActivity(userInfo.id, data, res);
+    }
 });
 
-/* Delete activity */
+/**
+ * @api {Delete} /activities/delete
+ * @apiName Delete Activity
+ * @apiGroup Activity
+ * 
+ * @apiParam {String} id Activity id
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key.
+ * 
+ * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {String} message Validation or success message.
+ */
 router.delete('/delete',function(req,res,next){
-	var json = {'is_delete' : true};
+	var json = {'isDeleted' : true};
     activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, responce) {
         if (err) {
             result = {
                 success: 0,
-                message: "Activity delete operation has been failed",
-                error: err
+                message: "Activity delete operation has been failed"
             };
         } else {
             var result = {
@@ -151,4 +206,23 @@ router.delete('/delete',function(req,res,next){
     });
 });
 
+function updateActivity(id, data, res) {
+    activity.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
+        if (err) {
+            result = {
+                success: 0,
+                message: "Error in updating activity"
+            };
+            res.json(result);
+        } else {
+            var result = {
+                success: 1,
+                message: "Activity has been updated"
+            };
+            res.json(result);
+        }
+    });
+}
+
 module.exports = router;
+
