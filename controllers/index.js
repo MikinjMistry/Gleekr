@@ -29,7 +29,7 @@ router.get('/', function(req, res, next) {
  * 
  * @apiParam {String} mobileNo mobile number with contry code
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {Number} Success 422, 417 : Fail and 200 : Success.
  * @apiSuccess {String} message Validation or success message.
  */
 router.post('/sendOTP', function (req, res, next) {
@@ -47,22 +47,18 @@ router.post('/sendOTP', function (req, res, next) {
         otp.findOne({mobileNo: req.body.mobileNo}, function (err, otpData) {
             if (err) {
                 result = {
-                    success: 0,
-                    message: "Error in find OTP",
-                    error: errors
+                    message: "Error in find OTP"
                 };
-                res.json(result);
+                res.status(422).json(result);
             }
             if (otpData) {
                 var json = {code: code, modified_datetime: new Date()};
                 otp.update({_id: {$eq: otpData._id}}, {$set: json}, function (err, responce) {
                     if (err) {
                         result = {
-                            success: 0,
-                            message: "Error in updating OTP",
-                            error: err
+                            message: "Error in updating OTP"
                         };
-                        res.json(result);
+                        res.status(422).json(result);
                     } else {
                         sendMessage(req.body.mobileNo, code, res);
                     }
@@ -76,11 +72,9 @@ router.post('/sendOTP', function (req, res, next) {
                 otpObject.save(function (err, data) {
                     if (err) {
                         result = {
-                            success: 0,
-                            message: "Error in inserting OTP",
-                            error: err
+                            message: "Error in inserting OTP"
                         };
-                        res.json(result);
+                        res.status(422).json(result);
                     } else {
                         sendMessage(req.body.mobileNo, code, res);
                     }
@@ -89,11 +83,9 @@ router.post('/sendOTP', function (req, res, next) {
         });
     } else {
         result = {
-            success: 0,
-            message: "Validation Error",
-            error: errors
+            message: errors
         };
-        res.json(result);
+        res.status(417).json(result);
     }
 });
 /**
@@ -104,9 +96,9 @@ router.post('/sendOTP', function (req, res, next) {
  * @apiParam {String} mobileNo mobile number with contry code
  * @apiParam {Number} otp Random four digit code
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {Number} Success 400,401,422,417 : Fail and 200 : Success.
  * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {String} Error error message.
+ * @apiSuccess {String} Token.
  */
 router.post('/verifyOTP', function (req, res, next) {
     var schema = {
@@ -125,11 +117,9 @@ router.post('/verifyOTP', function (req, res, next) {
         otp.findOne({mobileNo: req.body.mobileNo}, function (err, otpData) {
             if (err) {
                 var result = {
-                    success: 0,
-                    message: "Error in finding user with otp",
-                    error: err
+                    message: "Error in finding user with otp"
                 };
-                res.json(result);
+                res.status(422).json(result);
             }
             if (otpData) {
                 opt_send_date = moment(otpData.updated_date);
@@ -139,21 +129,17 @@ router.post('/verifyOTP', function (req, res, next) {
                 console.log("otptime:", config.OTP_EXPIRETION);
                 if (duration > config.OTP_EXPIRETION) {
                     var result = {
-                        success: 0,
-                        message: "Your OTP code is expired",
-                        error: []
+                        message: "Your OTP code is expired"
                     };
-                    res.json(result);
+                    res.status(401).json(result);
                 } else if (otpData.code == req.body.otp) {
                     json = {mobileNo: otpData.mobileNo};
                     user.findOne({mobileNo: otpData.mobileNo}, function (err, userData) {
                         if (err) {
                             result = {
-                                success: 0,
-                                message: "Error in finding User",
-                                error: err
+                                message: "Error in finding User"
                             };
-                            res.json(result);
+                            res.status(422).json(result);
                         }
                         if (userData) {
                             var userJson = {id: userData._id, mobileNo: userData.mobileNo};
@@ -163,29 +149,24 @@ router.post('/verifyOTP', function (req, res, next) {
                             otp.remove({_id: otpData._id}, function (err) {
                                 if (err) {
                                     result = {
-                                        success: 0,
-                                        message: "Error in deleteing OTP",
-                                        error: err
+                                        message: "Error in deleteing OTP"
                                     };
-                                    res.json(result);
+                                    res.status(422).json(result);
                                 }
                                 var result = {
-                                    success: 1,
                                     message: "OTP is verified successfully",
                                     token: token
                                 };
-                                res.json(result);
+                                res.status(200).json(result);
                             })
                         } else {
                             var userObject = new user(json);
                             userObject.save(function (err, responce) {
                                 if (err) {
                                     result = {
-                                        success: 0,
-                                        message: "User is already regster with gleekr",
-                                        error: err
+                                        message: "User is already regster with gleekr"
                                     };
-                                    res.json(result);
+                                    res.status(400).json(result);
                                 } else {
                                     var userJson = {id: responce._id, mobileNo: responce.mobileNo};
                                     var token = jwt.sign(userJson, config.JWT_SECRET, {
@@ -194,18 +175,15 @@ router.post('/verifyOTP', function (req, res, next) {
                                     otp.remove({_id: otpData._id}, function (err) {
                                         if (err) {
                                             result = {
-                                                success: 0,
-                                                message: "Error in deleteing OTP",
-                                                error: err
+                                                message: "Error in deleteing OTP"
                                             };
-                                            res.json(result);
+                                            res.status(422).json(result);
                                         }
                                         var result = {
-                                            success: 1,
                                             message: "OTP is verified successfully",
                                             token: token
                                         };
-                                        res.json(result);
+                                        res.status(200).json(result);
                                     })
                                 }
                             });
@@ -214,28 +192,22 @@ router.post('/verifyOTP', function (req, res, next) {
 
                 } else {
                     var result = {
-                        success: 0,
-                        message: "OTP is wrong",
-                        error: []
+                        message: "OTP is wrong"
                     };
-                    res.json(result);
+                    res.status(400).json(result);
                 }
             } else {
                 var result = {
-                    success: 0,
-                    message: "Mobile number has not requested for sendOTP",
-                    error: []
+                    message: "Mobile number has not requested for sendOTP"
                 };
-                res.json(result);
+                res.status(400).json(result);
             }
         });
     } else {
         var result = {
-            success: 0,
-            message: "Validation Error",
-            error: errors
+            message: erros
         };
-        res.json(result);
+        res.status(417).json(result);
     }
 });
 
@@ -247,7 +219,7 @@ router.post('/verifyOTP', function (req, res, next) {
  * 
  * @apiParam {String} mobileNo mobile number with contry code
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {Number} Success 400,422,500 : Fail and 200 : Success.
  * @apiSuccess {String} message Validation or success message.
  * @apiSuccess {String} Error error message.
  */
@@ -272,12 +244,17 @@ router.post('/voiceCall',function(req, res,next){
         };
         console.log("option:",options);
         client.calls.create(options).then((message) => {
-            res.send({
+            res.status(200).json({
                 message: 'OTP has been sent via call on given number.',
             });
         }).catch((error) => {
-            res.status(500).send(error);
+            res.status(500).json(error);
         });
+    } else {
+        result = {
+            message : errors
+        };
+        res.status(400).json(result);
     }
 });
 
@@ -288,28 +265,22 @@ router.post('/outbound/:mobileNo', function(request, response) {
     otp.findOne({mobileNo: mobileNo}, function (err, otpData) {
         if (err) {
             result = {
-                success: 0,
-                message: "Error in find OTP",
-                error: errors
+                message: "Error in find OTP"
             };
-            res.json(result);
+            res.status(422).json(result);
         }
         if (otpData) {
             var json = {code: code, modified_datetime: new Date()};
             otp.update({_id: {$eq: otpData._id}}, {$set: json}, function (err, responce) {
                 if (err) {
                     result = {
-                        success: 0,
-                        message: "Error in updating OTP",
-                        error: err
+                        message: "Error in updating OTP"
                     };
-                    res.json(result);
+                    res.status(422).json(result);
                 } else {
                     twimlResponse.say('Your Gleekr OTP is '+code,
                       { voice: 'alice' });
-
                     twimlResponse.dial(mobileNo);
-
                     response.send(twimlResponse.toString());
                 }
             });
@@ -322,17 +293,13 @@ router.post('/outbound/:mobileNo', function(request, response) {
             otpObject.save(function (err, data) {
                 if (err) {
                     result = {
-                        success: 0,
-                        message: "Error in inserting OTP",
-                        error: err
+                        message: "Error in inserting OTP"
                     };
-                    res.json(result);
+                    res.status(422).json(result);
                 } else {
                     twimlResponse.say('Your Gleekr OTP is '+code,
                       { voice: 'alice' });
-
                     twimlResponse.dial(mobileNo);
-
                     response.send(twimlResponse.toString());
                 }
             });
@@ -340,9 +307,6 @@ router.post('/outbound/:mobileNo', function(request, response) {
     });
     
 });
-
-
-
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
     var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
@@ -353,17 +317,14 @@ var sendMessage = function (number, code, res) {
     }, function (error, message) {
         if (!error) {
             result = {
-                success: 1,
                 message: "OTP has been sent successfully."
             };
-            res.json(result);
+            res.status(200).json(result);
         } else {
             var result = {
-                success: 0,
-                message: "Error in sending sms.",
-                error: error
+                message: "Error in sending sms."
             };
-            res.json(result);
+            res.status(422).json(result);
         }
     });
 }
