@@ -31,7 +31,6 @@ router.get('/', function(req, res, next) {
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
  */
 router.post('/insert', function(req, res, next) {
@@ -50,41 +49,28 @@ router.post('/insert', function(req, res, next) {
             filename = new Date().getTime() + extention;
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
-                    result = {
-                        success: 0,
-                        message: "Error in activity image upload",
-                        error: err
-                    };
-					res.json(result);
+					res.status(422).json({message: "Error in activity image upload"});
                 } else {
                     json.photo = "/upload/activity/" + filename;
 					var activityObject = new activity(json);
 					activityObject.save(function(err,data){
 						if(err)
 						{
-							var result = {
-								success: 0,
-								message: "Error in creating activity"
-							};
+							res.status(422).json({ message: "Error in creating activity" });
 						}
 						else
 						{
 							var result = {
-								success: 1,
 								message: "Activity has been added",
 								activity : data
 							};
+							res.status(200).json(result);
 						}
-						res.json(result);
 					});
                 }
             });
         } else {
-            result = {
-                success: 0,
-                message: "This File format is not allowed",
-                error: []
-            };
+            res.status(415).json({ message: "This File format is not allowed"});
         }
 	}
 	else
