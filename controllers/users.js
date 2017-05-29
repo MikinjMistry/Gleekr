@@ -297,13 +297,12 @@ router.post('/change_number', function (req, res, next) {
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
  * @apiSuccess {String} token If number change.
  */
 router.post('/verifyOTP', function (req, res, next) {
     var schema = {
-        'new_phone': {
+        'new_phone': 
             notEmpty: true,
             errorMessage: "New phone number must needed."
         },
@@ -317,50 +316,26 @@ router.post('/verifyOTP', function (req, res, next) {
     if (!errors) {
         otp.findOne({mobileNo: req.body.new_phone}, function (err, otpData) {
             if (err) {
-                var result = {
-                    success: 0,
-                    message: "Error in finding user with otp"
-                    // error: err
-                };
-                res.json(result);
+                res.status(417).json({message: "Error in finding user with otp"});
             }
             if (otpData) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
                 if (duration > process.env.OTP_EXPIRETION) {
-                    var result = {
-                        success: 0,
-                        message: "Your OTP code is expired"
-                        // error: []
-                    };
-                    res.json(result);
+                    res.status(401).json({message: "Your OTP code is expired"});
                 } else if (otpData.code == req.body.otp) {
                     json = {mobileNo: otpData.mobileNo};
                     user.findOne(json, function (err, userData) {
                         if (err) {
-                            result = {
-                                success: 0,
-                                message: "Error in finding User"
-                                // error: err
-                            };
-                            res.json(result);
+                            res.status(417).json({message: "Phone number is incorrect"});
                         }
                         if (userData) {
                             otp.remove({_id: otpData._id}, function (err) {
                                 if (err) {
-                                    result = {
-                                        success: 0,
-                                        message: "Error in deleteing OTP"
-                                        // error: err
-                                    };
-                                    res.json(result);
+                                    res.status(422).json({message: "Error in deleteing OTP"});
                                 }
-                                var result = {
-                                    success: 0,
-                                    message: "New phone is already registered with us"
-                                };
-                                res.json(result);
+                                res.status(422).json({message: "New phone is already registered with us"});
                             })
                         } else {
                             // OTP matched
@@ -371,28 +346,14 @@ router.post('/verifyOTP', function (req, res, next) {
                             json = {mobileNo: req.body.new_phone};
                             user.update({_id: {$eq: req.userInfo.id}}, {$set: json}, function (err, responce) {
                                 if (err) {
-                                    result = {
-                                        success: 0,
-                                        message: "Error in updating phone number"
-                                        // error: err
-                                    };
-                                    res.json(result);
+                                    res.status(422).json({message: "Error in updating phone number"});
                                 } else {
                                     otp.remove({_id: otpData._id}, function (err) {
                                         if (err) {
-                                            result = {
-                                                success: 0,
-                                                message: "Error in deleteing OTP"
-                                                // error: err
-                                            };
-                                            res.json(result);
+                                            res.status(422).json({message: "Error in deleteing OTP"});
                                         }
-                                        var result = {
-                                            success: 1,
-                                            message: "Phone number has been changed",
-                                            new_token: token
-                                        };
-                                        res.json(result);
+                                        var result = {message: "Phone number has been changed", new_token: token};
+                                        res.status(200).json(result);
                                     });
                                 }
                             });
@@ -400,29 +361,14 @@ router.post('/verifyOTP', function (req, res, next) {
                     });
 
                 } else {
-                    var result = {
-                        success: 0,
-                        message: "OTP is wrong",
-                        error: []
-                    };
-                    res.json(result);
+                    res.status(400).json({message: "OTP is wrong"});
                 }
             } else {
-                var result = {
-                    success: 0,
-                    message: "Mobile number has not requested for sendOTP"
-                    // error: []
-                };
-                res.json(result);
+                res.status(400).json({message: "Mobile number has not requested for sendOTP"});
             }
         });
     } else {
-        var result = {
-            success: 0,
-            message: "Validation Error"
-            // error: errors
-        };
-        res.json(result);
+        res.status(400).json({message: "Validation Error : "+errors});
     }
 });
 
