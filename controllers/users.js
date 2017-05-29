@@ -299,7 +299,7 @@ router.post('/change_number', function (req, res, next) {
  */
 router.post('/verifyOTP', function (req, res, next) {
     var schema = {
-        'new_phone': 
+        'new_phone': {
             notEmpty: true,
             errorMessage: "New phone number must needed."
         },
