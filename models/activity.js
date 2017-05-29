@@ -15,7 +15,7 @@ var ActivitySchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
     name: String,
     photo: String,
-    start_date: Date,
+    startDate: Date,
     startTime: Date,
     endDate: Date,
     endTime: Date,
