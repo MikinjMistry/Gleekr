@@ -13,7 +13,7 @@ require('dotenv').config();
 
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
-var client = require('../mqtt/mqttClient');
+
 // Send OTP to provided number
 var sendMessage = function (number, code, res) {
     var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -58,7 +58,7 @@ var send_card = function (number, msg) {
 
 
 /**
- * @api {get} /users Get User profile
+ * @api {get} /user Get User profile
  * @apiName User Profile Information
  * @apiGroup User
  *
@@ -85,7 +85,7 @@ router.get('/', function (req, res, next) {
 });
 
 /**
- * @api {delete} /users/deleteAccount Remove user account
+ * @api {delete} /user/deleteAccount Remove user account
  * @apiName Delete User Account
  * @apiGroup User
  *
@@ -94,7 +94,7 @@ router.get('/', function (req, res, next) {
  * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
  */
-router.delete('/deleteAccount', function (req, res, next) {
+router.delete('/delete_account', function (req, res, next) {
     var json = {'is_deleted': true};
     user.update({_id: {$eq: req.userInfo.id}}, {$set: json}, function (err, responce) {
         if (err) {
@@ -112,7 +112,7 @@ router.delete('/deleteAccount', function (req, res, next) {
 });
 
 /**
- * @api {put} /users/updateProfile Update user profile
+ * @api {put} /user/updateProfile Update user profile
  * @apiName Update Profile
  * @apiGroup User
  * @apiDescription You need to pass Form Data
@@ -127,7 +127,7 @@ router.delete('/deleteAccount', function (req, res, next) {
  * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
  * @apiSuccess {String} message Validation or success message.
  */
-router.put('/updateProfile', function (req, res, next) {
+router.put('/update_profile', function (req, res, next) {
     var json = req.body;
     var userInfo = req.userInfo;
     if (req.files) {
@@ -171,7 +171,7 @@ router.put('/updateProfile', function (req, res, next) {
 });
 
 /**
- * @api {post} /users/change_number Change phone number
+ * @api {post} /user/change_number Change phone number
  * @apiName Change Number
  * @apiGroup User
  * 
@@ -283,7 +283,7 @@ router.post('/change_number', function (req, res, next) {
 });
 
 /**
- * @api {post} /users/verifyOTP verify OTP for change number
+ * @api {post} /user/verifyOTP verify OTP for change number
  * @apiName Verify OTP for change number
  * @apiGroup User
  * 
@@ -295,7 +295,7 @@ router.post('/change_number', function (req, res, next) {
  * @apiSuccess {String} message Validation or success message.
  * @apiSuccess {String} token If number change.
  */
-router.post('/verifyOTP', function (req, res, next) {
+router.post('/verifyotp', function (req, res, next) {
     var schema = {
         'new_phone': {
             notEmpty: true,
@@ -368,7 +368,7 @@ router.post('/verifyOTP', function (req, res, next) {
 });
 
  /**
- * @api {post} /users/send_card User's contact card which will be send to any user
+ * @api {post} /user/send_card User's contact card which will be send to any user
  * @apiName Send Contact Card
  * @apiGroup User
  * 
