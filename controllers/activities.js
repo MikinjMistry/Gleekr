@@ -34,7 +34,7 @@ router.get('/', function(req, res, next) {
  * @apiSuccess {String} message Error or success message.
  * @apiSuccess {Object} activity If activity successfully inserted
  */
-router.post('/insert', function(req, res, next) {
+router.put('/insert', function(req, res, next) {
     var json = req.body;
 	json.user_id = req.userInfo.id;
 	json.isDeleted = true;
@@ -76,11 +76,12 @@ router.post('/insert', function(req, res, next) {
 	}
 	else
 	{
+		console.log("data = ",json);
 		var activityObject = new activity(json);
 		activityObject.save(function(err,data){
 			if(err)
 			{
-				res.status(422).json({message: "Error in creating activity"});
+				res.status(422).json({message: "Error in creating activity : ",err});
 			}
 			else
 			{
@@ -100,6 +101,7 @@ router.post('/insert', function(req, res, next) {
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
  * 
+ * @apiParam {String} id form-data: activity id that is going to update
  * @apiParam {file} photo form-data: file object for image [jpg,png]
  * @apiParam {String} name  form-data: Activity name
  * @apiParam {Date} startDate form-data: Activity start date 
@@ -115,7 +117,7 @@ router.post('/insert', function(req, res, next) {
  * 
  * @apiSuccess {String} message Error or success message.
  */
-router.post('/update',function(req,res,next){
+router.put('/update',function(req,res,next){
 	var json = req.body;
     if (req.files) {
         var file = req.files.file;
@@ -136,7 +138,7 @@ router.post('/update',function(req,res,next){
                         data = req.body;
                     }
                     data.photo = "/upload/activity/" + filename;
-                    updateActivity(userInfo.id, data, res);
+                    updateActivity(req.body.id, data, res);
                 }
             });
         } else {
@@ -144,7 +146,7 @@ router.post('/update',function(req,res,next){
         }
     } else {
         data = req.body;
-        updateActivity(userInfo.id, data, res);
+        updateActivity(req.body.id, data, res);
     }
 });
 
