@@ -204,6 +204,7 @@ router.post('/voice_call', function (req, res, next) {
     }
 });
 
+// for twilio voice call callback
 router.post('/outbound/:mobileNo', function (request, response) {
     var mobileNo = request.params.mobileNo;
     var twimlResponse = new VoiceResponse();
@@ -218,8 +219,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
                 if (err) {
                     res.status(422).json({ message: "Error in updating OTP" });
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code,
-                        { voice: 'alice' });
+                    twimlResponse.say('Your Gleekr OTP is ' + code,{ voice: 'alice' });
                     twimlResponse.dial(mobileNo);
                     response.send(twimlResponse.toString());
                 }
