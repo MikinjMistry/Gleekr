@@ -28,7 +28,7 @@ router.get('/', function (req, res, next) {
 });
 
 /**
- * @api {post} /sendotp Send / Re-send OTP
+ * @api {post} /sendotp Send / Re-send OTP - READY
  * @apiName Send / Re-send OTP
  * @apiGroup Root
  * 
@@ -84,7 +84,7 @@ router.post('/sendotp', function (req, res, next) {
 });
 
 /**
- * @api {post} /verifyotp Verify OTP
+ * @api {post} /verifyotp Verify OTP - READY
  * @apiName Otp verification
  * @apiGroup Root
  * 
