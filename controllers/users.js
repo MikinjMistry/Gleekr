@@ -4,8 +4,8 @@ var router = express.Router();
 var twilio = require('twilio');
 var moment = require('moment');
 
-var otp = require("../models/otp");
-var user = require("../models/user");
+var Otp = require("../models/otp");
+var User = require("../models/user");
 
 var fs = require('fs');
 var path = require('path');
@@ -126,7 +126,7 @@ router.put('/', function (req, res, next) {
  */
 router.delete('/', function (req, res, next) {
     var json = { 'isDeleted': true };
-    user.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
         if (err) {
             result = {
                 message: "Error in removing use account"
@@ -166,7 +166,7 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        user.findOne({ mobileNo: req.userInfo.mobileNo }, function (err, userData) {
+        User.findOne({ mobileNo: req.userInfo.mobileNo }, function (err, userData) {
             if (err) {
                 // Error in find user
                 result = {
@@ -177,7 +177,7 @@ router.post('/change_number', function (req, res, next) {
                 // error is not occured
                 if (userData) {
                     // Found user in database
-                    user.findOne({ mobileNo: req.body.newMobileNo }, function (err, newUserData) {
+                    User.findOne({ mobileNo: req.body.newMobileNo }, function (err, newUserData) {
                         // finding new number is already registered or not
                         if (err) {
                             // Error in find operation
@@ -194,7 +194,7 @@ router.post('/change_number', function (req, res, next) {
                                 res.status(417).json(result);
                             } else {
                                 // Send OTP to update new number
-                                otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
+                                Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
                                     if (err) {
                                         result = {
                                             message: "Error in send OTP"
@@ -204,7 +204,7 @@ router.post('/change_number', function (req, res, next) {
                                     }
                                     if (otpData) {
                                         var json = { code: code, modified_datetime: new Date() };
-                                        otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
+                                        Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
                                             if (err) {
                                                 result = {
                                                     message: "Error in updating OTP"
@@ -219,7 +219,7 @@ router.post('/change_number', function (req, res, next) {
                                             'mobileNo': req.body.newMobileNo,
                                             'code': code
                                         };
-                                        var otpObject = new otp(json);
+                                        var otpObject = new Otp(json);
                                         otpObject.save(function (err, data) {
                                             if (err) {
                                                 result = {
@@ -282,7 +282,7 @@ router.post('/verifyotp', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
+        Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
             if (err) {
                 res.status(417).json({ message: "Error in finding user with otp" });
             }
@@ -294,12 +294,12 @@ router.post('/verifyotp', function (req, res, next) {
                     res.status(401).json({ message: "Your OTP code is expired" });
                 } else if (otpData.code == req.body.otp) {
                     json = { mobileNo: otpData.mobileNo };
-                    user.findOne(json, function (err, userData) {
+                    User.findOne(json, function (err, userData) {
                         if (err) {
                             res.status(417).json({ message: "Phone number is incorrect" });
                         }
                         if (userData) {
-                            otp.remove({ _id: otpData._id }, function (err) {
+                            Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
                                     res.status(422).json({ message: "Error in deleteing OTP" });
                                 }
@@ -312,11 +312,11 @@ router.post('/verifyotp', function (req, res, next) {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
                             json = { mobileNo: req.body.newMobileNo };
-                            user.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
+                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
                                 if (err) {
                                     res.status(422).json({ message: "Error in updating phone number" });
                                 } else {
-                                    otp.remove({ _id: otpData._id }, function (err) {
+                                    Otp.remove({ _id: otpData._id }, function (err) {
                                         if (err) {
                                             res.status(422).json({ message: "Error in deleteing OTP" });
                                         }
@@ -363,13 +363,13 @@ router.post('/send_card', function (req, res, next) {
     var errors = req.validationErrors();
     if (!errors) {
         var contactList = _.pluck(req.body.contacts, "mobile_no");
-        user.findOne({ '_id': req.userInfo.id }, function (err, userdata) {
+        User.findOne({ '_id': req.userInfo.id }, function (err, userdata) {
             if (err) {
                 res.status(422).json({ message: "Error in finding user." });
             } else {
 
                 _.each(contactList, function (con) {
-                    user.findOne({ mobileNo: con }, function (err, data) {
+                    User.findOne({ mobileNo: con }, function (err, data) {
                         var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your friend') + ' has sent his card from Gleekr.\n';
                         msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (typeof userdata.email != 'undefined' ? userdata.email : '-') + '\nJob title : ' + (typeof userdata.jobTitle != 'undefined' ? userdata.jobTitle : '-') + '\nCompany : ' + (typeof userdata.companyName != 'undefined' ? userdata.companyName : '-');
                         if (data != null) {
@@ -411,7 +411,7 @@ router.post('/send_card', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.get('/', function (req, res, next) {
-    user.findOne({ '_id': req.userInfo.id }, function (err, user) {
+    User.findOne({ '_id': req.userInfo.id }, function (err, user) {
         if (err) {
             result = {
                 message: "Error in get user profile"
@@ -427,7 +427,7 @@ router.get('/', function (req, res, next) {
 });
 
 function updateUser(id, data, res) {
-    user.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
+    User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
         if (err) {
             result = {
                 message: "Error in updating profile",
