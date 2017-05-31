@@ -13,8 +13,6 @@ module.exports = function (req, res, next) {
             }
         });
     } else {
-        return res.status(400).json({
-            message: 'No token provided'
-        });
+        return res.status(400).json({message: 'No token provided'});
     }
 }
