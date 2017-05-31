@@ -118,7 +118,7 @@ router.post('/verifyotp', function (req, res, next) {
                     res.status(401).json({ message: "Your OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
                     json = { mobileNo: otpData.mobileNo };
-                    user.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
                         if (err) {
                             res.status(422).json({ message: "Error occured while finding User" });
                         }
@@ -209,13 +209,13 @@ router.post('/outbound/:mobileNo', function (request, response) {
     var mobileNo = request.params.mobileNo;
     var twimlResponse = new VoiceResponse();
     var code = Math.floor(1000 + Math.random() * 9000);
-    otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
+    Otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
         if (err) {
             res.status(422).json({ message: "Error in find OTP" });
         }
         if (otpData) {
             var json = { code: code, modified_datetime: new Date() };
-            otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
+            Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
                 if (err) {
                     res.status(422).json({ message: "Error in updating OTP" });
                 } else {
@@ -225,24 +225,21 @@ router.post('/outbound/:mobileNo', function (request, response) {
                 }
             });
         } else {
-            var json = {
+            var otpObject = new Otp({
                 'mobileNo': mobileNo,
                 'code': code
-            };
-            var otpObject = new otp(json);
+            });
             otpObject.save(function (err, data) {
                 if (err) {
                     res.status(422).json({ message: "Error in inserting OTP" });
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code,
-                        { voice: 'alice' });
+                    twimlResponse.say('Your Gleekr OTP is ' + code,{ voice: 'alice' });
                     twimlResponse.dial(mobileNo);
                     response.send(twimlResponse.toString());
                 }
             });
         }
     });
-
 });
 
 /* Send OTP to provided number */
