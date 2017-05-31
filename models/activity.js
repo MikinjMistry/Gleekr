@@ -1,6 +1,6 @@
 //Require Mongoose
 var mongoose = require('mongoose');
-console.log("Hello world");
+
 //Define a schema
 var Schema = mongoose.Schema;
 
