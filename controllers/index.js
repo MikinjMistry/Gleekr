@@ -7,8 +7,8 @@ var twilio = require('twilio');
 var path = require('path');
 var VoiceResponse = twilio.twiml.VoiceResponse;
 
-var user = require("../models/user");
-var otp = require("../models/otp");
+var User = require("../models/user");
+var Otp = require("../models/otp");
 
 require('dotenv').config();
 
@@ -48,14 +48,16 @@ router.post('/sendotp', function (req, res, next) {
     var errors = req.validationErrors();
     var result = {};
     if (!errors) {
+		// Generate random code
         var code = Math.floor(1000 + Math.random() * 9000);
-        otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
+		
+        Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
                 res.status(422).json({ message: "OTP generation failed" });
             }
             if (otpData) { //re-generate OTP
                 var updatedOTP = { code: code, modifiedAt: new Date() };
-                otp.update({ _id: { $eq: otpData._id } }, { $set: updatedOTP }, function (err, data) {
+                Otp.update({ _id: { $eq: otpData._id } }, { $set: updatedOTP }, function (err, data) {
                     if (err) {
                         res.status(422).json({ message: "Error occured in generating OTP" });
                     } else {
@@ -63,7 +65,7 @@ router.post('/sendotp', function (req, res, next) {
                     }
                 });
             } else { //generate new OTP
-                var newOTP = new otp({
+                var newOTP = new Otp({
                     'mobileNo': req.body.mobileNo,
                     'code': code
                 });
@@ -80,7 +82,6 @@ router.post('/sendotp', function (req, res, next) {
         res.status(417).json({ message: errors });
     }
 });
-
 
 /**
  * @api {post} /verifyotp Verify OTP - READY
@@ -108,34 +109,31 @@ router.post('/verifyotp', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
+        Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
                 res.status(422).json({ message: "Invalid OTP" });
-            }            
+            }
             if (otpData) {
-                opt_send_date = moment(otpData.updated_date);
-                now = moment();
-                var duration = now.diff(opt_send_date, 'minutes');
-                
-                if (duration > config.OTP_EXPIRETION) {
+                if (moment().diff(moment(otpData.updated_date), 'minutes') > config.OTP_EXPIRETION) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
                     json = { mobileNo: otpData.mobileNo };
-                    user.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
                         if (err) {
-                            res.status(422).json({ message: "Error in finding User" });
+                            res.status(422).json({ message: "Error occured while finding User" });
                         }
                         if (userData) {
                             var userJson = { id: userData._id, mobileNo: userData.mobileNo };
                             var token = jwt.sign(userJson, config.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
-                            otp.remove({ _id: otpData._id }, function (err) {
+							
+                            Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
-                                    res.status(422).json({ message: "Error in deleteing OTP" });
+                                    res.status(422).json({ message: "Error occured in deleteing OTP" });
                                 }
                                 res.status(200).json({ message: "OTP is verified successfully", token: token });
-                            })
+                            });
                         } else {
                             var userObject = new user(json);
                             userObject.save(function (err, responce) {
@@ -146,7 +144,7 @@ router.post('/verifyotp', function (req, res, next) {
                                     var token = jwt.sign(userJson, config.JWT_SECRET, {
                                         expiresIn: 60 * 60 * 24 // expires in 24 hours
                                     });
-                                    otp.remove({ _id: otpData._id }, function (err) {
+                                    Otp.remove({ _id: otpData._id }, function (err) {
                                         if (err) {
                                             res.status(422).json({ message: "Error in deleteing OTP" });
                                         }
@@ -156,7 +154,6 @@ router.post('/verifyotp', function (req, res, next) {
                             });
                         }
                     });
-
                 } else {
                     res.status(400).json({ message: "OTP is wrong" });
                 }
@@ -170,7 +167,7 @@ router.post('/verifyotp', function (req, res, next) {
 });
 
 /**
- * @api {post} /voice-call OTP via Call
+ * @api {post} /voice_call OTP via Call
  * @apiName Send OTP through call
  * @apiGroup Root
  * 
@@ -207,45 +204,42 @@ router.post('/voice_call', function (req, res, next) {
     }
 });
 
+// for twilio voice call callback
 router.post('/outbound/:mobileNo', function (request, response) {
     var mobileNo = request.params.mobileNo;
     var twimlResponse = new VoiceResponse();
     var code = Math.floor(1000 + Math.random() * 9000);
-    otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
+    Otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
         if (err) {
             res.status(422).json({ message: "Error in find OTP" });
         }
         if (otpData) {
             var json = { code: code, modified_datetime: new Date() };
-            otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
+            Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
                 if (err) {
                     res.status(422).json({ message: "Error in updating OTP" });
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code,
-                        { voice: 'alice' });
+                    twimlResponse.say('Your Gleekr OTP is ' + code,{ voice: 'alice' });
                     twimlResponse.dial(mobileNo);
                     response.send(twimlResponse.toString());
                 }
             });
         } else {
-            var json = {
+            var otpObject = new Otp({
                 'mobileNo': mobileNo,
                 'code': code
-            };
-            var otpObject = new otp(json);
+            });
             otpObject.save(function (err, data) {
                 if (err) {
                     res.status(422).json({ message: "Error in inserting OTP" });
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code,
-                        { voice: 'alice' });
+                    twimlResponse.say('Your Gleekr OTP is ' + code,{ voice: 'alice' });
                     twimlResponse.dial(mobileNo);
                     response.send(twimlResponse.toString());
                 }
             });
         }
     });
-
 });
 
 /* Send OTP to provided number */
