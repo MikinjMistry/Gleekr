@@ -161,8 +161,8 @@ router.post('/verifyotp', function (req, res, next) {
                                         if (err) {
                                             res.status(400).json({message: "Error in db changes"});
                                         }
-                                        var userJson = {id: responce._id, mobileNo: responce.mobileNo};
-                                        var token = jwt.sign(userJson, config.ACCESS_TOKEN_JWT_SECRET, {
+                                        var userJson = {id: newUser._id, mobileNo: newUser.mobileNo};
+                                        var token = jwt.sign(userJson, config.ACCESS_TOKEN_SECRET_KEY, {
                                             expiresIn: 60 * 60 * 24 // expires in 24 hours
                                         });
                                         res.status(200).json({message: "OTP is verified successfully", token: token, refreshToken: refreshToken});
