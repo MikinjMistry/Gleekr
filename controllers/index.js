@@ -5,8 +5,8 @@ var moment = require('moment');
 var jwt = require('jsonwebtoken');
 var twilio = require('twilio');
 var path = require('path');
+var async = require('async');
 var VoiceResponse = twilio.twiml.VoiceResponse;
-
 var User = require("../models/user");
 var Otp = require("../models/otp");
 
@@ -117,40 +117,63 @@ router.post('/verifyotp', function (req, res, next) {
                 if ( moment().diff( moment( otpData.updated_date ), 'minutes' ) > config.OTP_EXPIRETION ) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
                 } else if ( otpData.code == req.body.otp ) {
-                    json = { mobileNo: otpData.mobileNo };
+                    
                     User.findOne({ mobileNo: otpData.mobileNo, isDeleted:false  }, function (err, userData) {
                         if (err) {
                             res.status(422).json({ message: "Error occured while finding User" });
                         }
                         if (userData) {
                             var userJson = { id: userData._id, mobileNo: userData.mobileNo };
-                            var token = jwt.sign(userJson, config.JWT_SECRET, {
-                                expiresIn: 60 * 60 * 24 // expires in 24 hours
+                            var token = jwt.sign(userJson, config.ACCESS_TOKEN_JWT_SECRET, {
+//                                expiresIn: 60 * 60 * 24 // expires in 24 hours
+                                expiresIn: 30
                             });
-							
                             Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
                                     res.status(422).json({ message: "Error occured in deleteing OTP" });
                                 }
-                                res.status(200).json({ message: "OTP is verified successfully", token: token });
+                                res.status(200).json({ message: "OTP is verified successfully", token: token,refreshToken:userData.refreshToken });
                             });
                         } else {
-                            var userObject = new User(json);
-                            userObject.save(function (err, responce) {
+                            
+                            var userObject = new User({ 
+                                mobileNo: otpData.mobileNo
+                            });
+                            userObject.save(function (err, newUser) {
                                 if (err) {
                                     res.status(400).json({ message: "User is already regster with gleekr" });
                                 } else {
-                                    var userJson = { id: responce._id, mobileNo: responce.mobileNo };
-                                    var token = jwt.sign(userJson, config.JWT_SECRET, {
-//                                        expiresIn: 60 * 60 * 24 // expires in 24 hours
-                                        expiresIn: 30
-                                    });
-                                    Otp.remove({ _id: otpData._id }, function (err) {
-                                        if (err) {
-                                            res.status(422).json({ message: "Error in deleteing OTP" });
-                                        }
-                                        res.status(200).json({ message: "OTP is verified successfully", token: token });
-                                    })
+                                var refreshToken = jwt.sign({id:newUser._id},config.REFRESH_TOKEN_SECRET_KEY,{});    
+                                async.parallel({
+                                    updateToken: function(callback) {
+                                        
+                                        User.update({ _id: { $eq: newUser._id } }, { $set: { 'refreshToken': refreshToken } }, function (err, responce) {
+                                            if (err) {
+                                                callback({ message: "Error in removing use account"},'');
+                                            } else {
+                                                callback({},true)
+                                            }
+                                        });
+                                    },
+                                    removeOtp: function(callback) {
+                                        Otp.remove({ _id: otpData._id }, function (err) {
+                                            if (err) {
+                                                callback({message: "Error in deleteing OTP" },null);
+                                            }
+                                            callback({},true)
+                                        });
+
+                                    }
+                                }, function(err, results) {
+                                    console.log("err:",err)
+                                    console.log("results:",results);
+//                                    var userJson = { id: responce._id, mobileNo: responce.mobileNo };
+//                                    var token = jwt.sign(userJson,config.ACCESS_TOKEN_JWT_SECRET, {
+////                                        expiresIn: 60 * 60 * 24 // expires in 24 hours
+//                                        expiresIn: 30
+//                                    });
+//                                    res.status(200).json({ message: "OTP is verified successfully", token: token,refreshToken:refreshToken});
+                                });
                                 }
                             });
                         }

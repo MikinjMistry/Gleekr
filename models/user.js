@@ -21,6 +21,7 @@ var UserSchema = new Schema({
     jobTitle: String,
     companyName: String,
     isDeleted: Boolean,
+    refreshToken:String,
     groupPinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to group.chat_messages _id
     personalChatPinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to chat  _id
     createdAt: { type: Date, default: Date.now },
