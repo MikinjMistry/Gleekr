@@ -117,12 +117,16 @@ router.post('/verifyotp', function (req, res, next) {
                 if ( moment().diff( moment( otpData.updated_date ), 'minutes' ) > config.OTP_EXPIRETION ) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
                 } else if ( otpData.code == req.body.otp ) {
-                    json = { mobileNo: otpData.mobileNo };
-                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted:false  }, function (err, userData) {
+                    json = { mobileNo: otpData.mobileNo, isDeleted: false };
+					console.log("find json = ",json);
+                    User.findOne({ json }, function (err, userData) {
                         if (err) {
                             res.status(422).json({ message: "Error occured while finding User" });
                         }
+						
+						console.log("userdata = ",userData);
                         if (userData) {
+							console.log('User is already available');
                             var userJson = { id: userData._id, mobileNo: userData.mobileNo };
                             var token = jwt.sign(userJson, config.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
@@ -135,6 +139,7 @@ router.post('/verifyotp', function (req, res, next) {
                                 res.status(200).json({ message: "OTP is verified successfully", token: token });
                             });
                         } else {
+							console.log('New user. Going to insert new one');
                             var userObject = new User(json);
                             userObject.save(function (err, responce) {
                                 if (err) {
