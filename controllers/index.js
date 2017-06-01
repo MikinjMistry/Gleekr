@@ -114,11 +114,11 @@ router.post('/verifyotp', function (req, res, next) {
                 res.status(422).json({ message: "Invalid OTP" });
             }
             if (otpData) {
-                if (moment().diff(moment(otpData.updated_date), 'minutes') > config.OTP_EXPIRETION) { // Checking for expiration
+                if ( moment().diff( moment( otpData.updated_date ), 'minutes' ) > config.OTP_EXPIRETION ) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
-                } else if (otpData.code == req.body.otp) {
+                } else if ( otpData.code == req.body.otp ) {
                     json = { mobileNo: otpData.mobileNo };
-                    User.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted:false  }, function (err, userData) {
                         if (err) {
                             res.status(422).json({ message: "Error occured while finding User" });
                         }
@@ -135,14 +135,15 @@ router.post('/verifyotp', function (req, res, next) {
                                 res.status(200).json({ message: "OTP is verified successfully", token: token });
                             });
                         } else {
-                            var userObject = new user(json);
+                            var userObject = new User(json);
                             userObject.save(function (err, responce) {
                                 if (err) {
                                     res.status(400).json({ message: "User is already regster with gleekr" });
                                 } else {
                                     var userJson = { id: responce._id, mobileNo: responce.mobileNo };
                                     var token = jwt.sign(userJson, config.JWT_SECRET, {
-                                        expiresIn: 60 * 60 * 24 // expires in 24 hours
+//                                        expiresIn: 60 * 60 * 24 // expires in 24 hours
+                                        expiresIn: 30
                                     });
                                     Otp.remove({ _id: otpData._id }, function (err) {
                                         if (err) {
@@ -241,6 +242,23 @@ router.post('/outbound/:mobileNo', function (request, response) {
         }
     });
 });
+
+//router.post('/refresh_token',function(req,res,next){
+//    var token = req.body.token || req.query.token || req.headers['x-access-token'];
+//    if (token) {
+//        jwt.verify(token,process.env.JWT_SECRET, function (err, decoded) {
+//            if (err) {
+//                return res.status(401).json({message: 'Invalid token'});
+//            } else {
+//                req.userInfo = decoded;
+//                next();
+//            }
+//        });
+//    } else {
+//        return res.status(400).json({message: 'No token provided'});
+//    }
+//});
+
 
 /* Send OTP to provided number */
 var sendMessage = function (number, code, res) {
