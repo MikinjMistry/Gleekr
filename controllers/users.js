@@ -32,6 +32,7 @@ var sendMessage = function (number, code, res) {
         }
     });
 }
+
 // Send contact card to specified number
 var send_card = function (number, msg) {
     var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -61,6 +62,7 @@ var send_card = function (number, msg) {
  * @apiGroup User
  * @apiDescription You need to pass Form Data
  * 
+ * @apiParam {String} name  form-data: full name of the user
  * @apiParam {String} email  form-data: user email
  * @apiParam {String} jobTitle form-data: job title 
  * @apiParam {String} companyName form-data:company name
