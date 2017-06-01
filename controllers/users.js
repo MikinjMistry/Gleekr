@@ -125,18 +125,11 @@ router.put('/', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/', function (req, res, next) {
-    var json = { 'isDeleted': true };
-    User.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { 'isDeleted': true } }, function (err, responce) {
         if (err) {
-            result = {
-                message: "Error in removing use account"
-            };
-            res.status(422).json(result);
+            res.status(422).json({ message: "Error in removing use account"});
         } else {
-            var result = {
-                message: "Your account removed successfully."
-            };
-            res.status(200).json(result);
+            res.status(200).json({message: "Your account removed successfully."});
         }
     });
 });

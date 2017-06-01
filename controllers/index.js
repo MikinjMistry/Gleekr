@@ -114,11 +114,11 @@ router.post('/verifyotp', function (req, res, next) {
                 res.status(422).json({ message: "Invalid OTP" });
             }
             if (otpData) {
-                if (moment().diff(moment(otpData.updated_date), 'minutes') > config.OTP_EXPIRETION) { // Checking for expiration
+                if ( moment().diff( moment( otpData.updated_date ), 'minutes' ) > config.OTP_EXPIRETION ) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
-                } else if (otpData.code == req.body.otp) {
+                } else if ( otpData.code == req.body.otp ) {
                     json = { mobileNo: otpData.mobileNo };
-                    User.findOne({ mobileNo: otpData.mobileNo }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted:false  }, function (err, userData) {
                         if (err) {
                             res.status(422).json({ message: "Error occured while finding User" });
                         }
