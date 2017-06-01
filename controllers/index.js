@@ -124,7 +124,7 @@ router.post('/verifyotp', function (req, res, next) {
                         }
                         if (userData) {
                             var userJson = {id: userData._id, mobileNo: userData.mobileNo};
-                            var token = jwt.sign(userJson, config.ACCESS_TOKEN_JWT_SECRET, {
+                            var token = jwt.sign(userJson, config.ACCESS_TOKEN_SECRET_KEY, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
                             Otp.remove({_id: otpData._id}, function (err) {
