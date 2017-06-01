@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var twilio = require('twilio');
+require('../helpers/twilio');
 var moment = require('moment');
 
 var Otp = require("../models/otp");
@@ -14,47 +14,6 @@ require('dotenv').config();
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
 
-// Send OTP to provided number
-var sendMessage = function (number, code, res) {
-    var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    client.messages.create({
-        to: number,
-        from: process.env.TWILIO_NUMBER,
-        body: 'Use ' + code + ' as Gleekr account security code'
-    }, function (error, message) {
-        if (!error) {
-            result = {
-                message: "OTP has been sent successfully."
-            };
-            res.status(200).json(result);
-        } else {
-            res.status(422).json({ message: "Error in sending sms." });
-        }
-    });
-}
-
-// Send contact card to specified number
-var send_card = function (number, msg) {
-    var client = new twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    client.messages.create({
-        to: number,
-        from: process.env.TWILIO_NUMBER,
-        body: msg
-    }, function (error, message) {
-        if (!error) {
-            result = {
-                success: 1,
-                message: "Contact card has been sent successfully."
-            };
-        } else {
-            var result = {
-                success: 0,
-                message: "Error in sending sms.",
-                error: error
-            };
-        }
-    });
-}
 
 /**
  * @api {put} /user Update user profile - READY
@@ -421,7 +380,116 @@ router.get('/', function (req, res, next) {
     });
 });
 
-
+/**
+ * @api {post} /users/sync_contact User's contact synchronized
+ * @apiName Sync Contact
+ * @apiGroup User
+ * 
+ * @apiParam {Array} contacts raw data : Array of object [{name:contact_name,mobile_no:contact_no}].  User's contact list 
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key.
+ * 
+ * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
+ * @apiSuccess {String} message Validation or success message.
+ * @apiSuccess {String} error optional to describe error
+ */
+ router.post('/sync_contact',function(req,res,next){
+    var schema = {
+            'contacts': {
+                notEmpty: true,
+                errorMessage: "To sync contact, contacts are required."
+            }
+        };
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+     if (!errors) {
+      contact.find({user_id:req.userInfo.id},function(err,contactData){
+       // Finding user in database
+                if (err) {
+                    var result = {
+                        success: 0,
+                        message: "Error in finding user with otp",
+                        error: err
+                    };
+                    res.json(result);
+                }
+       
+       var dbContact = _.pluck(contactData,"mobile_no");
+       var inputContact = _.pluck(req.body.contacts,"mobile_no");
+       
+       // Find contact that is available in contactData and not available in req.body.contacts and delete those contact
+       var del_contact = _.difference(dbContact,inputContact);
+       console.log("del = ",del_contact);
+       
+       // Find contact that is not available in contactData and available in req.body.contacts and insert those contact
+       var ins_contact = _.difference(inputContact,dbContact);
+       console.log("ins = ",ins_contact);
+       
+       // Iterate each contact for insert
+       _.each(ins_contact,function(con){
+        
+        var current_contact = _.findWhere(req.body.contacts,{"mobile_no":con});
+        
+        // Check contact is gleekr contact or not
+        user.findOne({mobile_no: con}, function (err, userData) {
+         if(!err)
+         {
+          // Add new contact in database
+          if(userData)
+          {
+           // Gleekr contact
+           var new_contact = {
+            'name':current_contact.name,
+            'mobile_no':con,
+            'user_id':req.userInfo.id,
+            'is_gleekr_contact':1
+           };
+          }
+          else
+          {
+           // Non-gleekr contact
+           var new_contact = {
+            'name':current_contact.name,
+            'mobile_no':con,
+            'user_id':req.userInfo.id,
+            'is_gleekr_contact':0
+           };
+          }
+          var contactObj = new contact(new_contact);
+          contactObj.save(function(err,data){
+           console.log('contact has been added');
+          });
+         }
+        });
+       });
+       
+       // Iterate each contact for delete
+       _.each(del_contact,function(con){
+        // Add new contact in database
+        var old_contact = {
+         'mobile_no':con,
+         'user_id':req.userInfo.id
+        };
+        contact.remove(old_contact,function(err,data){
+         console.log('contact has been deleted');
+        });
+       });
+       
+       var result = {
+        success: 1,
+        message: "successfully synchronized contacts"
+       };
+       res.json(result);
+      });
+     } else {
+            var result = {
+                success: 0,
+                message: "Validation Error",
+                error: errors
+            };
+            res.json(result);
+        }
+});
 
 function updateUser(id, data, res) {
     User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
