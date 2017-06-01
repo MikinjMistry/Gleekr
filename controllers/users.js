@@ -419,6 +419,8 @@ router.get('/', function (req, res, next) {
     });
 });
 
+
+
 function updateUser(id, data, res) {
     User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
         if (err) {
