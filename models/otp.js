@@ -12,7 +12,7 @@ var OtpSchema = new Schema({
     code: String,
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
-});
+}, { versionKey: false });
 
 // Compile model from schema
 var Otp = mongoose.model('otp', OtpSchema, 'otp');

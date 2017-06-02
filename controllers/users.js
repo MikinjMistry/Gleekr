@@ -1,11 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
-require('../helpers/twilio');
+var config = require('../config');
+var twilio = require('twilio');
 var moment = require('moment');
 
 var Otp = require("../models/otp");
 var User = require("../models/user");
+var Group = require("../models/group");
 
 var fs = require('fs');
 var path = require('path');
@@ -14,6 +16,47 @@ require('dotenv').config();
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
 
+// Send OTP to provided number
+var sendMessage = function (number, code, res) {
+    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
+    client.messages.create({
+        to: number,
+        from: config.TWILIO_NUMBER,
+        body: 'Use ' + code + ' as Gleekr account security code'
+    }, function (error, message) {
+        if (!error) {
+            result = {
+                message: "OTP has been sent successfully."
+            };
+            res.status(config.OK_STATUS).json(result);
+        } else {
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in sending sms." });
+        }
+    });
+}
+
+// Send contact card to specified number
+var send_card = function (number, msg) {
+    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
+    client.messages.create({
+        to: number,
+        from: config.TWILIO_NUMBER,
+        body: msg
+    }, function (error, message) {
+        if (!error) {
+            result = {
+                success: 1,
+                message: "Contact card has been sent successfully."
+            };
+        } else {
+            var result = {
+                success: 0,
+                message: "Error in sending sms.",
+                error: error
+            };
+        }
+    });
+}
 
 /**
  * @api {put} /user Update user profile - READY
@@ -26,8 +69,8 @@ var jwt = require('jsonwebtoken');
  * @apiParam {String} jobTitle form-data: job title 
  * @apiParam {String} companyName form-data:company name
  * @apiParam {file} file form-data: file object [jpg,png]
- * 
- * @apiHeader {String}  x-access-token Users unique access-key.
+ *  
+ * @apiHeader {String}  x-access-token Users unique access-key
  * 
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
@@ -51,7 +94,7 @@ router.put('/', function (req, res, next) {
                         message: "Error in profile image upload",
                         error: err
                     };
-                    res.status(415).json(result);
+                    res.status(config.MEDIA_ERROR_STATUS).json(result);
                 } else {
                     imagepath = "/upload/" + userInfo.id + "/" + filename;
                     data = {};
@@ -63,11 +106,7 @@ router.put('/', function (req, res, next) {
                 }
             });
         } else {
-            result = {
-                message: "This File format is not allowed",
-                error: []
-            };
-            res.status(417).json(result);
+            res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
         }
     } else {
         data = req.body;
@@ -80,29 +119,38 @@ router.put('/', function (req, res, next) {
  * @apiName Delete User Account
  * @apiGroup User
  *
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  Content-Type application/json
+ * @apiHeader {String}  x-access-token Users unique access-key
  *
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/', function (req, res, next) {
-    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { 'isDeleted': true } }, function (err, responce) {
+    var json = { 'isDeleted': true };
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
         if (err) {
-            res.status(422).json({ message: "Error in removing use account"});
+            result = {
+                message: "Error in deleting user account"
+            };
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
         } else {
-            res.status(200).json({message: "Your account removed successfully."});
+            var result = {
+                message: "Account deleted successfully"
+            };
+            res.status(config.OK_STATUS).json(result);
         }
     });
 });
 
 /**
- * @api {post} /user/change_number Change phone number
+ * @api {post} /user/change_number Change phone number - READY
  * @apiName Change Number
  * @apiGroup User
  * 
  * @apiParam {String} newMobileNo New phone number on which OTP will be sent
  * 
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  Content-Type application/json
+ * @apiHeader {String}  x-access-token Users unique access-key
  * 
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
@@ -112,7 +160,7 @@ router.post('/change_number', function (req, res, next) {
     var schema = {
         'newMobileNo': {
             notEmpty: true,
-            errorMessage: "New phone number must needed."
+            errorMessage: "Mobile number required"
         }
     };
     req.checkBody(schema);
@@ -120,82 +168,81 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        User.findOne({ mobileNo: req.userInfo.mobileNo }, function (err, userData) {
+        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: null }, function (err, userData) {
             if (err) {
-                // Error in find user
+                // Error in finding user
                 result = {
-                    message: "Error in find user"
+                    message: "User not found"
                 };
-                res.status(422).json(result);
-            } else {
-                // error is not occured
-                if (userData) {
-                    // Found user in database
-                    User.findOne({ mobileNo: req.body.newMobileNo }, function (err, newUserData) {
-                        // finding new number is already registered or not
-                        if (err) {
-                            // Error in find operation
-                            result = {
-                                message: "Error in find user"
-                            };
-                            res.status(422).json(result);
-                        } else {
-                            if (newUserData) {
-                                // User is already available in database
+                res.status(config.NOT_FOUND).json(result);
+            }
+
+            if (userData) { // User found
+                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: null }, function (err, newUserData) {
+                    // finding new number is already registered or not
+                    if (err) {
+                        // Error in find operation
+                        result = {
+                            message: "User not found"
+                        };
+                        res.status(config.NOT_FOUND).json(result);
+                    }
+
+                    if (newUserData) {
+                        // User is already available in database
+                        result = {
+                            message: (newUserData._id === req.userInfo._id) ? "Number already in use" : "Number already in use by other user"
+                        };
+                        res.status(config.VALIDATION_FAILURE_STATUS).json(result);
+                    } else {
+                        // Send OTP to new number
+                        Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
+                            if (err) {
                                 result = {
-                                    message: "New number is already available in database"
+                                    message: "Error in sending OTP"
+                                    //error: errors
                                 };
-                                res.status(417).json(result);
-                            } else {
-                                // Send OTP to update new number
-                                Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
+                                res.status(config.VALIDATION_FAILURE_STATUS).json(result);
+                            }
+
+                            if (otpData) {
+                                var json = { code: code, modified_datetime: new Date() };
+                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
                                     if (err) {
                                         result = {
-                                            message: "Error in send OTP"
-                                            //error: errors
+                                            message: "Error occured in generating OTP"
                                         };
-                                        res.status(417).json(result);
-                                    }
-                                    if (otpData) {
-                                        var json = { code: code, modified_datetime: new Date() };
-                                        Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
-                                            if (err) {
-                                                result = {
-                                                    message: "Error in updating OTP"
-                                                };
-                                                res.status(422).json(result);
-                                            } else {
-                                                sendMessage(req.body.newMobileNo, code, res);
-                                            }
-                                        });
+                                        res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        var json = {
-                                            'mobileNo': req.body.newMobileNo,
-                                            'code': code
+                                        sendMessage(req.body.newMobileNo, code, res);
+                                    }
+                                });
+                            } else {
+                                var json = {
+                                    'mobileNo': req.body.newMobileNo,
+                                    'code': code
+                                };
+                                var otpObject = new Otp(json);
+                                otpObject.save(function (err, data) {
+                                    if (err) {
+                                        result = {
+                                            message: "Error occured in generating OTP"
                                         };
-                                        var otpObject = new Otp(json);
-                                        otpObject.save(function (err, data) {
-                                            if (err) {
-                                                result = {
-                                                    message: "Error in inserting OTP"
-                                                };
-                                                res.status(422).json(result);
-                                            } else {
-                                                sendMessage(req.body.newMobileNo, code, res);
-                                            }
-                                        });
+                                        res.status(config.DATABASE_ERROR_STATUS).json(result);
+                                    } else {
+                                        sendMessage(req.body.newMobileNo, code, res);
                                     }
                                 });
                             }
-                        }
-                    });
-                } else {
-                    // User not found
-                    result = {
-                        message: "User not available in database"
-                    };
-                    res.status(417).json(result);
-                }
+                        });
+                    }
+                });
+            } else {
+                // User not found
+                result = {
+                    message: "User not found"
+                };
+                res.status(404).json(result);
             }
         });
     } else {
@@ -208,14 +255,15 @@ router.post('/change_number', function (req, res, next) {
 });
 
 /**
- * @api {post} /user/verifyotp verify OTP for change number
+ * @api {post} /user/verifyotp verify OTP for new number - READY
  * @apiName Verify OTP for change number
  * @apiGroup User
  * 
- * @apiParam {String} newMobileNo New phone number on which OTP has been sent
+ * @apiParam {String} mobileNo New phone number on which OTP has been sent
  * @apiParam {String} otp OTP recevied by user
  * 
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  Content-Type application/json
+ * @apiHeader {String}  x-access-token Users unique access-key
  * 
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiSuccess {String} token New token.
@@ -224,84 +272,90 @@ router.post('/change_number', function (req, res, next) {
  */
 router.post('/verifyotp', function (req, res, next) {
     var schema = {
-        'newMobileNo': {
+        'mobileNo': {
             notEmpty: true,
-            errorMessage: "New phone number must needed."
+            errorMessage: "Mobile number is required"
         },
         'otp': {
             notEmpty: true,
-            errorMessage: "OTP is required."
+            errorMessage: "OTP is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
+        Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
-                res.status(417).json({ message: "Error in finding user with otp" });
+                res.status(config.NOT_FOUND).json({ message: "User not found" });
             }
             if (otpData) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
                 if (duration > process.env.OTP_EXPIRETION) {
-                    res.status(401).json({ message: "Your OTP code is expired" });
+                    res.status(config.BAD_REQUEST).json({ message: "OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
-                    json = { mobileNo: otpData.mobileNo };
-                    User.findOne(json, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: null }, function (err, userData) {
                         if (err) {
-                            res.status(417).json({ message: "Phone number is incorrect" });
+                            res.status(config.NOT_FOUND).json({ message: "User not found" });
                         }
+
                         if (userData) {
                             Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
-                                    res.status(422).json({ message: "Error in deleteing OTP" });
+                                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in deleting OTP" });
                                 }
-                                res.status(422).json({ message: "New phone is already registered with us" });
+                                res.status(config.BAD_REQUEST).json({ message: "Mobile number already in use" });
                             })
                         } else {
                             // OTP matched
-                            var userJson = { id: req.userInfo.id, mobileNo: req.body.newMobileNo };
-                            var token = jwt.sign(userJson, process.env.JWT_SECRET, {
+                            var token = jwt.sign({ id: req.userInfo.id, mobileNo: req.body.mobileNo }, process.env.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
-                            json = { mobileNo: req.body.newMobileNo };
-                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: json }, function (err, responce) {
+
+                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, responce) {
                                 if (err) {
-                                    res.status(422).json({ message: "Error in updating phone number" });
+                                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating phone number" });
                                 } else {
                                     Otp.remove({ _id: otpData._id }, function (err) {
                                         if (err) {
-                                            res.status(422).json({ message: "Error in deleteing OTP" });
+                                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in deleting OTP" });
                                         }
-                                        var result = { message: "Phone number has been changed", new_token: token };
-                                        res.status(200).json(result);
+                                        var result = { message: "Mobile number updated successfully", token: token };
+                                        res.status(config.OK_STATUS).json(result);
                                     });
                                 }
+
                             });
                         }
                     });
 
                 } else {
-                    res.status(417).json({ message: "OTP is wrong" });
+                    res.status(config.BAD_REQUEST).json({ message: "Invalid OTP" });
                 }
             } else {
-                res.status(417).json({ message: "Mobile number has not requested for sendOTP" });
+                res.status(config.BAD_REQUEST).json({ message: "Invalid request" });
             }
         });
     } else {
-        res.status(417).json({ message: "Validation Error : " + errors });
+        res.status(config.BAD_REQUEST).json({
+            message: "Validation Error ",
+            error: errors
+        });
     }
 });
 
 /**
-* @api {post} /user/send_card User's contact card which will be send to any user
+* @api {post} /user/send_card Send user's contact card - READY
 * @apiName Send Contact Card
 * @apiGroup User
+* @apiDescription SMS will be send to Phone Contacts [Done]
+* @apiDescription Gleekr in-app message will be send to Gleekr contacts [Will be covered with chat integration]
 * 
-* @apiParam {Array} contacts raw data : Array of object [{mobile_no:contact_no}]. User's contact list 
+* @apiParam {Array} contacts raw data : Array of objects [{mobileNo: contact_no }]. User's contact list.
 * 
-* @apiHeader {String}  x-access-token Users unique access-key.
+* @apiHeader {String}  Content-Type application/json
+* @apiHeader {String}  x-access-token Users unique access-key
 * 
 * @apiSuccess (Success 200) {String} message Success message.
 * @apiError (Error 4xx) {String} message Validation or error message.
@@ -310,27 +364,26 @@ router.post('/send_card', function (req, res, next) {
     var schema = {
         'contacts': {
             notEmpty: true,
-            errorMessage: "To sync contact, contacts are required."
+            errorMessage: "Contacts are required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        var contactList = _.pluck(req.body.contacts, "mobile_no");
+        var contactList = _.pluck(req.body.contacts, "mobileNo");
         User.findOne({ '_id': req.userInfo.id }, function (err, userdata) {
             if (err) {
-                res.status(422).json({ message: "Error in finding user." });
+                res.status(config.NOT_FOUND).json({ message: "User data not found" });
             } else {
-
                 _.each(contactList, function (con) {
-                    User.findOne({ mobileNo: con }, function (err, data) {
-                        var msg = (typeof userdata.name != 'undefined' ? userdata.name : 'Your friend') + ' has sent his card from Gleekr.\n';
-                        msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (typeof userdata.email != 'undefined' ? userdata.email : '-') + '\nJob title : ' + (typeof userdata.jobTitle != 'undefined' ? userdata.jobTitle : '-') + '\nCompany : ' + (typeof userdata.companyName != 'undefined' ? userdata.companyName : '-');
+                    User.findOne({ mobileNo: con, isDeleted: null }, function (err, data) {
+                        var msg = (userdata.name || 'Your friend') + ' has shared contact card from Gleekr.\n';
+                        msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (userdata.email || '-') + '\nJob title : ' + (userdata.jobTitle || '-') + '\nCompany : ' + (userdata.companyName || '-');
                         if (data != null) {
                             console.log('Gleekr contact', 'user_' + data._id);
                             console.log('Gleekr contact', msg);
 
-                            client.publish('user_' + data._id, msg);
+                            //client.publish('user_' + data._id, msg);
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
@@ -341,14 +394,11 @@ router.post('/send_card', function (req, res, next) {
                 var result = {
                     message: "Contact card send successfully."
                 };
-                res.status(200).json(result)
+                res.status(config.OK_STATUS).json(result)
             }
         });
     } else {
-        var result = {
-            message: errors
-        };
-        res.status(417).json(result)
+        res.status(config.BAD_REQUEST).json({ message: errors });
     }
 });
 
@@ -357,7 +407,8 @@ router.post('/send_card', function (req, res, next) {
  * @apiName User Profile Information
  * @apiGroup User
  *
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  Content-Type application/json
+ * @apiHeader {String}  x-access-token Users unique access-key
  *
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiSuccess {Json} User data.
@@ -370,127 +421,84 @@ router.get('/', function (req, res, next) {
             result = {
                 message: "Error in get user profile"
             };
-            res.status(422).json(result);
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
         } else {
             var result = {
                 data: user
             };
-            res.status(200).json(result);
+            res.status(config.OK_STATUS).json(result);
         }
     });
 });
 
 /**
- * @api {post} /users/sync_contact User's contact synchronized
- * @apiName Sync Contact
- * @apiGroup User
- * 
- * @apiParam {Array} contacts raw data : Array of object [{name:contact_name,mobile_no:contact_no}].  User's contact list 
- * 
- * @apiHeader {String}  x-access-token Users unique access-key.
- * 
- * @apiSuccess {Number} Success 0 : Fail and 1 : Success.
- * @apiSuccess {String} message Validation or success message.
- * @apiSuccess {String} error optional to describe error
- */
- router.post('/sync_contact',function(req,res,next){
+* @api {post} /user/sync_contacts Sync contacts - READY
+* @apiName Sync Contacts
+* @apiGroup User
+* 
+* @apiParam {Array} contacts raw data : Array of objects [{mobileNo: contact_no, firstName: first_name, lastName: last_name, email: email }]
+* 
+* @apiHeader {String}  Content-Type application/json
+* @apiHeader {String}  x-access-token Users unique access-key
+* 
+* @apiSuccess (Success 200) {Array} gleekrUsers Array of Gleekr users objects.
+* @apiSuccess (Success 200) {Array} gleekrGroups Array of user's Gleekr groups
+* @apiSuccess (Success 200) {Array} phoneContacts Array of Phone contacts
+* @apiError (Error 4xx) {String} message
+*/
+router.post('/sync_contacts', function (req, res, next) {
     var schema = {
-            'contacts': {
-                notEmpty: true,
-                errorMessage: "To sync contact, contacts are required."
-            }
-        };
+        'contacts': {
+            notEmpty: true,
+            errorMessage: "Contacts are required"
+        }
+    };
     req.checkBody(schema);
     var errors = req.validationErrors();
-     if (!errors) {
-      contact.find({user_id:req.userInfo.id},function(err,contactData){
-       // Finding user in database
-                if (err) {
-                    var result = {
-                        success: 0,
-                        message: "Error in finding user with otp",
-                        error: err
-                    };
-                    res.json(result);
-                }
-       
-       var dbContact = _.pluck(contactData,"mobile_no");
-       var inputContact = _.pluck(req.body.contacts,"mobile_no");
-       
-       // Find contact that is available in contactData and not available in req.body.contacts and delete those contact
-       var del_contact = _.difference(dbContact,inputContact);
-       console.log("del = ",del_contact);
-       
-       // Find contact that is not available in contactData and available in req.body.contacts and insert those contact
-       var ins_contact = _.difference(inputContact,dbContact);
-       console.log("ins = ",ins_contact);
-       
-       // Iterate each contact for insert
-       _.each(ins_contact,function(con){
-        
-        var current_contact = _.findWhere(req.body.contacts,{"mobile_no":con});
-        
-        // Check contact is gleekr contact or not
-        user.findOne({mobile_no: con}, function (err, userData) {
-         if(!err)
-         {
-          // Add new contact in database
-          if(userData)
-          {
-           // Gleekr contact
-           var new_contact = {
-            'name':current_contact.name,
-            'mobile_no':con,
-            'user_id':req.userInfo.id,
-            'is_gleekr_contact':1
-           };
-          }
-          else
-          {
-           // Non-gleekr contact
-           var new_contact = {
-            'name':current_contact.name,
-            'mobile_no':con,
-            'user_id':req.userInfo.id,
-            'is_gleekr_contact':0
-           };
-          }
-          var contactObj = new contact(new_contact);
-          contactObj.save(function(err,data){
-           console.log('contact has been added');
-          });
-         }
-        });
-       });
-       
-       // Iterate each contact for delete
-       _.each(del_contact,function(con){
-        // Add new contact in database
-        var old_contact = {
-         'mobile_no':con,
-         'user_id':req.userInfo.id
+    if (!errors) {
+        var responseData = {
+            gleekrUsers: [],
+            gleekrGroups: [],
+            phoneContacts: []
         };
-        contact.remove(old_contact,function(err,data){
-         console.log('contact has been deleted');
+
+        //Pluck all mobile numbers
+        var mobileNumbers = _.pluck(req.body.contacts, "mobileNo");
+
+        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: null }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
+            if (error) {
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Problem occured while syncing your contacts" });
+            }
+
+            if (matchedContacts && matchedContacts.length > 0) { // Gleekr contacts
+                responseData.gleekrUsers = matchedContacts;
+            }
+
+            //Get non gleekr users mobileNo
+            var phoneContactNos = _.difference(mobileNumbers, _.pluck(responseData.gleekrUsers, "mobileNo"));
+            responseData.phoneContacts = _.filter(req.body.contacts, function (contact) { return phoneContactNos.indexOf(contact.mobileNo) > -1; }); // Phone contacts
+
+            //Get user's group
+            Group.find({ "members._id": { "$in": _.pluck(responseData.gleekrUser, "_id") } }, function (error, groups) {
+                if (error) {
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Problem occured while syncing your contacts" });
+                }
+
+                if (groups && groups.length > 0) {
+                    responseData.gleekrGroups = groups;
+                }
+
+                //Send sync_contacts response
+                res.status(config.OK_STATUS).json(responseData);
+            });
         });
-       });
-       
-       var result = {
-        success: 1,
-        message: "successfully synchronized contacts"
-       };
-       res.json(result);
-      });
-     } else {
-            var result = {
-                success: 0,
-                message: "Validation Error",
-                error: errors
-            };
-            res.json(result);
-        }
+
+    } else {
+        res.status(config.BAD_REQUEST).json({ message: errors });
+    }
 });
 
+/* Update User details */
 function updateUser(id, data, res) {
     User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
         if (err) {
@@ -498,12 +506,9 @@ function updateUser(id, data, res) {
                 message: "Error in updating profile",
                 error: err
             };
-            res.status(422).json(result);
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
         } else {
-            var result = {
-                message: "Profile updated successfully",
-            };
-            res.status(200).json(result);
+            res.status(config.OK_STATUS).json({ message: "Profile updated successfully" });
         }
     });
 }

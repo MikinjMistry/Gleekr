@@ -11,7 +11,7 @@ var ActivitiesSchema = new Schema({
     pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to activity.chat_messages _id
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
-});
+}, { versionKey: false });
 
 var UserSchema = new Schema({
     name: String,
@@ -21,13 +21,13 @@ var UserSchema = new Schema({
     jobTitle: String,
     companyName: String,
     isDeleted: Boolean,
-    refreshToken:String,
+    refreshToken: String,
     groupPinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to group.chat_messages _id
     personalChatPinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to chat  _id
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     activities: [ActivitiesSchema], //Embedding ActivitiesSchema into user
-});
+}, { versionKey: false });
 
 // Compile model from schema
 var User = mongoose.model('users', UserSchema, 'users');

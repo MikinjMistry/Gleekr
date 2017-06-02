@@ -11,7 +11,7 @@ var ChatSchema = new Schema({
     mimeType: { type: String, enum: ["text", "video", "image", "audio"] },
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
-});
+}, { versionKey: false });
 
 // Compile model from schema
 var Chat = mongoose.model('chat', ChatSchema, 'chat');

@@ -9,7 +9,7 @@ var ActivityChatSchema = new Schema({
     message: String,
     mimeType: { type: String, enum: ["text", "video", "image", "audio"] },
     createdAt: { type: Date, default: Date.now }
-});
+}, { versionKey: false });
 
 var ActivitySchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
@@ -27,7 +27,7 @@ var ActivitySchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     chatMessages: [ActivityChatSchema] //Embedding ActivityChatSchema into Activity
-});
+}, { versionKey: false });
 
 // Compile model from schema
 var Activity = mongoose.model('activities', ActivitySchema, 'activities');

@@ -6,11 +6,11 @@ Run `npm install`.
 
 ## Run Development server
 
-Run `npm run dev` for a dev server. Navigate to `http://localhost:4000/`. The app will automatically reload if you change any of the source files.
+Run `npm run dev` for a dev server. Navigate to `http://localhost:3000/`. The app will automatically reload if you change any of the source files.
 
 ## Run Production server
 
-Run `npm run prod` for a dev server. Navigate to `http://localhost:4000/`. The app won't automatically reload if you change any of the source files.
+Run `npm run prod` for a dev server. Navigate to `http://localhost:3000/`. The app won't automatically reload if you change any of the source files.
 
 ## Install apidoc generator to see api documentation 
 Run `npm install -g apidoc`

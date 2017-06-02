@@ -7,14 +7,14 @@ var Schema = mongoose.Schema;
 var MemberSchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
     createdAt: { type: Date, default: Date.now }
-});
+}, { versionKey: false });
 
 var GroupChatSchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
     message: String,
     mimeType: { type: String, enum: ["text", "video", "image", "audio"] },
     createdAt: { type: Date, default: Date.now }
-});
+}, { versionKey: false });
 
 var GroupSchema = new Schema({
     name: String,
@@ -25,7 +25,7 @@ var GroupSchema = new Schema({
     modifiedAt: { type: Date, default: Date.now },
     members: [MemberSchema], //Embedding MemberSchema into group
     chatMessages: [GroupChatSchema] //Embedding GroupChatSchema into group for chat messages
-});
+}, { versionKey: false });
 
 // Compile model from schema
 var Group = mongoose.model('group', GroupSchema, 'group');
