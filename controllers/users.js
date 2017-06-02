@@ -4,6 +4,7 @@ var router = express.Router();
 var config = require('../config');
 var twilio = require('twilio');
 var moment = require('moment');
+var twiliohelper = require('../helpers/twilio');
 
 var Otp = require("../models/otp");
 var User = require("../models/user");
@@ -15,49 +16,6 @@ require('dotenv').config();
 
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
-
-// Send OTP to provided number
-var sendMessage = function (number, code, res) {
-    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
-    client.messages.create({
-        to: number,
-        from: config.TWILIO_NUMBER,
-        body: 'Use ' + code + ' as Gleekr account security code'
-    }, function (error, message) {
-        if (!error) {
-            result = {
-                message: "OTP has been sent successfully."
-            };
-            res.status(config.OK_STATUS).json(result);
-        } else {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in sending sms." });
-        }
-    });
-}
-
-// Send contact card to specified number
-var send_card = function (number, msg) {
-    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
-    client.messages.create({
-        to: number,
-        from: config.TWILIO_NUMBER,
-        body: msg
-    }, function (error, message) {
-        if (!error) {
-            result = {
-                success: 1,
-                message: "Contact card has been sent successfully."
-            };
-        } else {
-            var result = {
-                success: 0,
-                message: "Error in sending sms.",
-                error: error
-            };
-        }
-    });
-}
-
 /**
  * @api {put} /user Update user profile - READY
  * @apiName Update Profile
@@ -213,7 +171,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
                                     }
                                 });
                             } else {
@@ -229,7 +187,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
                                     }
                                 });
                             }
@@ -386,7 +344,7 @@ router.post('/send_card', function (req, res, next) {
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
-                            send_card(con, msg);
+                            twiliohelper.send_card(con, msg);
                         }
                     });
                 });
