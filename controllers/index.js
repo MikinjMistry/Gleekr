@@ -6,6 +6,7 @@ var jwt = require('jsonwebtoken');
 var twilio = require('twilio');
 var path = require('path');
 var async = require('async');
+var twiliohelper = require('../helpers/twilio');
 var VoiceResponse = twilio.twiml.VoiceResponse;
 
 var User = require("../models/user");
@@ -64,7 +65,7 @@ router.post('/sendotp', function (req, res, next) {
                     if (err) {
                         res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in generating OTP"});
                     } else {
-                        sendMessage(req.body.mobileNo, code, res);
+                        twiliohelper.sendMessage(req.body.mobileNo, code, res);
                     }
                 });
             } else { //generate new OTP
@@ -76,7 +77,7 @@ router.post('/sendotp', function (req, res, next) {
                     if (err) {
                         res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in generating OTP"});
                     } else {
-                        sendMessage(req.body.mobileNo, code, res);
+                        twiliohelper.sendMessage(req.body.mobileNo, code, res);
                     }
                 });
             }
@@ -269,6 +270,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
         }
     });
 });
+
 /**
  * @api {post} /refresh_token Refresh Token 
  * @apiName Refresh token
