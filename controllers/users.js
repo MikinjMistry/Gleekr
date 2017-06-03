@@ -4,6 +4,7 @@ var router = express.Router();
 var config = require('../config');
 var twilio = require('twilio');
 var moment = require('moment');
+var client = require('../mqtt/mqttClient');
 var twiliohelper = require('../helpers/twilio');
 
 var Otp = require("../models/otp");
@@ -339,8 +340,7 @@ router.post('/send_card', function (req, res, next) {
                         if (data != null) {
                             console.log('Gleekr contact', 'user_' + data._id);
                             console.log('Gleekr contact', msg);
-
-                            //client.publish('user_' + data._id, msg);
+                            client.publish('user_' + data._id,msg);
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
