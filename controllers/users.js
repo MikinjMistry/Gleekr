@@ -342,7 +342,7 @@ router.post('/send_card', function (req, res, next) {
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
-                            // twiliohelper.send_card(con, msg);
+                            twiliohelper.send_card(con, msg);
                         }
                         console.log(userdata);
                     });

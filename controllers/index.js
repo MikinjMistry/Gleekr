@@ -18,7 +18,7 @@ var auth = require('../middlewares/auth');
 
 /* Link controllers with routes */
 router.use('/user', auth, users);
-router.use('/activities', auth, activities);
+router.use('/activity', auth, activities);
 router.use('/contact', auth, contacts);
 
 /* GET home page. */

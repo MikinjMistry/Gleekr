@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-
+var config = require('../config');
 var Activity = require("../models/activity");
 
 var fs = require('fs');
@@ -8,7 +8,7 @@ var path = require('path');
 
 /* GET activity listing. */
 router.get('/', function(req, res, next) {
-  res.status(200).send('Activity controller called!');
+  res.status(config.OK_STATUS).send('Activity controller called!');
 });
 
 /**
@@ -49,21 +49,21 @@ router.post('/', function(req, res, next) {
             filename = new Date().getTime() + extention;
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
-					res.status(422).json({message: "Error in activity image upload"});
+					res.status(config.MEDIA_ERROR_STATUS).json({message: "Error in activity image upload"});
                 } else {
                     json.photo = "/upload/activity/" + filename;
 					var activityObject = new Activity(json);
 					activityObject.save(function(err,data){
 						if(err) {
-							res.status(422).json({ message: "Error occured in creating activity" });
+							res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
 						} else {
-							res.status(200).json({ message: "Activity has been added", activity:data});
+							res.status(config.OK_STATUS).json({ message: "Activity has been added", activity:data});
 						}
 					});
                 }
             });
         } else {
-            res.status(415).json({ message: "This File format is not allowed"});
+            res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed"});
         }
 	}
 	else
@@ -71,9 +71,9 @@ router.post('/', function(req, res, next) {
 		var activityObject = new Activity(json);
 		activityObject.save(function(err,data){
 			if(err) {
-				res.status(422).json({message: "Error in creating activity : ",err});
+				res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in creating activity : ",err});
 			} else {
-				res.status(200).json({ message: "Activity has been added", activity:data});
+				res.status(config.OK_STATUS).json({ message: "Activity has been added", activity:data});
 			}
 		});
 	}
@@ -115,7 +115,7 @@ router.put('/',function(req,res,next){
             filename = new Date().getTime() + extention;
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
-                    res.status(422).json({message: "Error in activity image upload"});
+                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in activity image upload"});
                 } else {
                     data = {};
                     if (req.body) {
@@ -150,9 +150,9 @@ router.delete('/',function(req,res,next){
 	var json = {'isDeleted' : true};
     Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, responce) {
         if (err) {
-			res.status(422).json({ message: "Activity delete operation has been failed" });
+			res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity delete operation has been failed" });
         } else {
-			res.status(200).json({message: "Activity has been deleted."});
+			res.status(config.OK_STATUS).json({message: "Activity has been deleted."});
         }
     });
 });
@@ -160,9 +160,9 @@ router.delete('/',function(req,res,next){
 function updateActivity(id, data, res) {
     Activity.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
         if (err) {
-            res.status(422).json({ message: "Error in creating activity" });
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in creating activity" });
         } else {
-            res.status(200).json({message: "Activity has been updated"});
+            res.status(config.OK_STATUS).json({message: "Activity has been updated"});
         }
     });
 }
