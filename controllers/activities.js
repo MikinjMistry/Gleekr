@@ -5,7 +5,6 @@ var Activity = require("../models/activity");
 
 var fs = require('fs');
 var path = require('path');
-require('dotenv').config();
 
 /* GET activity listing. */
 router.get('/', function(req, res, next) {
