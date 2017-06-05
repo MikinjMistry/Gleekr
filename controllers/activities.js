@@ -129,7 +129,7 @@ router.put('/',function(req,res,next){
                         data = req.body;
                     }
                     data.photo = "/upload/activity/" + filename;
-                    updateActivity(req.body.id, data, res);
+                    updateActivity(req.userInfo.id, data, res);
                 }
             });
         } else {
@@ -137,7 +137,7 @@ router.put('/',function(req,res,next){
         }
     } else {
         data = req.body;
-        updateActivity(req.body.id, data, res);
+        updateActivity(req.userInfo.id, data, res);
     }
 });
 
@@ -164,14 +164,14 @@ router.delete('/',function(req,res,next){
     });
 });
 
-function updateActivity(id, data, res) {
-    Activity.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
+function updateActivity(userId, data, res) {
+    Activity.update({_id: {$eq: data.id}}, {$set: data}, function (err, responce) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in creating activity" });
         } else {
 			botObj = new Bot({
-				'user_id':req.userInfo.id,
-				'activity_id':id,
+				'user_id':userId,
+				'activity_id':data.id,
 				'actionType':'update'
 			});
 			botObj.save(function(err,data){});
