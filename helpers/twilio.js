@@ -1,10 +1,13 @@
 var twilio = require('twilio');
 var config = require('../config');
 var VoiceResponse = twilio.twiml.VoiceResponse;
-// Send OTP to provided number
 var json = {};
 var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
-// Send contact card to specified number
+/* 
+ * Send contact card to specified number
+ * @param Integer number phone number to whom contact card will be send
+ * @param String msg content of contact card
+*/
 json.send_card = function (number, msg) {
     client.messages.create({
         to: number,
@@ -12,7 +15,14 @@ json.send_card = function (number, msg) {
         body: msg
     });
 }
-// Send SMS
+/* 
+ * Send sms to specified number
+ * @param Integer to phone number to whom sms will be send
+ * @param String msg content of message
+ * @param String succ Success message
+ * @param String err Error Message
+ * @param Object res Response object of parent api
+*/
 json.sendSMS = function(to, msg, succ, err, res) {
     client.messages.create({
         to: to,
@@ -26,7 +36,14 @@ json.sendSMS = function(to, msg, succ, err, res) {
         }
     });
 }
-// Create call
+/* 
+ * Create call to specified number
+ * @param Integer to phone number on which call will be created
+ * @param String url callback function / api called by twilio
+ * @param String succ Success message
+ * @param String err Error Message
+ * @param Object res Response object of parent api
+*/
 json.createCall = function(to, url, succ, res) {
     client.calls.create({
         to: req.body.mobileNo,
@@ -38,7 +55,12 @@ json.createCall = function(to, url, succ, res) {
         res.status(500).json(error);
     });
 }
-// Dail call
+/* 
+ * Create call to specified number
+ * @param Integer mobileNo phone number on which call will be dialed
+ * @param String succ Success message
+ * @param Object response Response object of parent api
+*/
 json.dailCall = function(mobileNo, msg, response) {
     var twimlResponse = new VoiceResponse();
     wimlResponse.say(msg, {voice: 'alice'});
