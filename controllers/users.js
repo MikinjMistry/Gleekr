@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../config');
-var twilio = require('twilio');
 var moment = require('moment');
 var client = require('../mqtt/mqttClient');
 var twiliohelper = require('../helpers/twilio');
@@ -172,7 +171,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             } else {
@@ -188,7 +187,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             }
@@ -346,6 +345,7 @@ router.post('/send_card', function (req, res, next) {
                             console.log(msg);
                             twiliohelper.send_card(con, msg);
                         }
+                        console.log(userdata);
                     });
                 });
                 var result = {
