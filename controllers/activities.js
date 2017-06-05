@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var config = require('../config');
 var Activity = require("../models/activity");
+var Bot = require("../models/bot");
 
 var fs = require('fs');
 var path = require('path');
@@ -57,6 +58,12 @@ router.post('/', function(req, res, next) {
 						if(err) {
 							res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
 						} else {
+							botObj = new Bot({
+								'user_id':req.userInfo.id,
+								'activity_id':data._id,
+								'actionType':'create'
+							});
+							botObj.save(function(err,data){});
 							res.status(config.OK_STATUS).json({ message: "Activity has been added", activity:data});
 						}
 					});
@@ -162,6 +169,12 @@ function updateActivity(id, data, res) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in creating activity" });
         } else {
+			botObj = new Bot({
+				'user_id':req.userInfo.id,
+				'activity_id':id,
+				'actionType':'update'
+			});
+			botObj.save(function(err,data){});
             res.status(config.OK_STATUS).json({message: "Activity has been updated"});
         }
     });
