@@ -2,8 +2,8 @@ var express = require('express');
 var router = express.Router();
 
 var config = require('../config');
-var twilio = require('twilio');
 var moment = require('moment');
+var client = require('../mqtt/mqttClient');
 var twiliohelper = require('../helpers/twilio');
 
 var Otp = require("../models/otp");
@@ -12,7 +12,6 @@ var Group = require("../models/group");
 
 var fs = require('fs');
 var path = require('path');
-require('dotenv').config();
 
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
@@ -84,7 +83,7 @@ router.put('/', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/', function (req, res, next) {
-    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { 'isDeleted': true } }, function (err, response) {
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { 'isDeleted': true } }, function (err, responce) {
         if (err) {
 			result = {
                 message: "Error in deleting user account"
@@ -164,14 +163,14 @@ router.post('/change_number', function (req, res, next) {
 
                             if (otpData) {
                                 var json = { code: code, modified_datetime: new Date() };
-                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, response) {
+                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
                                     if (err) {
                                         result = {
                                             message: "Error occured in generating OTP"
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             } else {
@@ -187,7 +186,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendMessage(req.body.newMobileNo, code, res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             }
@@ -249,7 +248,7 @@ router.post('/verifyotp', function (req, res, next) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
-                if (duration > config.OTP_EXPIRATION) {
+                if (duration > process.env.OTP_EXPIRETION) {
                     res.status(config.BAD_REQUEST).json({ message: "OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
                     User.findOne({ mobileNo: otpData.mobileNo, isDeleted: null }, function (err, userData) {
@@ -266,11 +265,11 @@ router.post('/verifyotp', function (req, res, next) {
                             })
                         } else {
                             // OTP matched
-                            var token = jwt.sign({ id: req.userInfo.id, mobileNo: req.body.mobileNo }, config.ACCESS_TOKEN_SECRET_KEY, {
+                            var token = jwt.sign({ id: req.userInfo.id, mobileNo: req.body.mobileNo }, process.env.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
 
-                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, response) {
+                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, responce) {
                                 if (err) {
                                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating phone number" });
                                 } else {
@@ -339,13 +338,13 @@ router.post('/send_card', function (req, res, next) {
                         if (data != null) {
                             console.log('Gleekr contact', 'user_' + data._id);
                             console.log('Gleekr contact', msg);
-
-                            //client.publish('user_' + data._id, msg);
+                            client.publish('user_' + data._id,msg);
                         } else {
                             console.log('Not Gleekr user');
                             console.log(msg);
                             twiliohelper.send_card(con, msg);
                         }
+                        console.log(userdata);
                     });
                 });
                 var result = {
@@ -457,7 +456,7 @@ router.post('/sync_contacts', function (req, res, next) {
 
 /* Update User details */
 function updateUser(id, data, res) {
-    User.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
+    User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
         if (err) {
             result = {
                 message: "Error in updating profile",
