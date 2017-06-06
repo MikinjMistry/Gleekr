@@ -36,47 +36,85 @@ router.get('/', function(req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.post('/', function(req, res, next) {
-    var json = req.body;
-	json.user_id = req.userInfo.id;
-	json.isDeleted = true;
-	if (req.files) {
-		var file = req.files.file;
-        var dir = "./upload/activity";
-        if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-            }
-            extention = path.extname(file.name);
-            filename = new Date().getTime() + extention;
-            file.mv(dir + '/' + filename, function (err) {
-                if (err) {
-					res.status(422).json({message: "Error in activity image upload"});
-                } else {
-                    json.photo = "/upload/activity/" + filename;
-					var activityObject = new Activity(json);
-					activityObject.save(function(err,data){
-						if(err) {
-							res.status(422).json({ message: "Error occured in creating activity" });
-						} else {
-							res.status(200).json({ message: "Activity has been added", activity:data});
-						}
-					});
-                }
-            });
-        } else {
-            res.status(415).json({ message: "This File format is not allowed"});
+	var schema = {
+        'name': {
+            notEmpty: true,
+            errorMessage: "Activity name is required"
+        },
+        'startDate': {
+            notEmpty: true,
+            errorMessage: "Activity start date is required"
+        },
+		'startTime': {
+            notEmpty: true,
+            errorMessage: "Activity start time is required"
+        },
+		'endDate': {
+            notEmpty: true,
+            errorMessage: "Activity end date is required"
+        },
+		'endTime': {
+            notEmpty: true,
+            errorMessage: "Activity end time is required"
+        },
+		'location': {
+            notEmpty: true,
+            errorMessage: "Activity location is required"
         }
+    };
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+	if(!errors)
+	{
+		var json = req.body;
+		json.user_id = req.userInfo.id;
+		json.isDeleted = true;
+		if (req.files) {
+			var file = req.files.file;
+			var dir = "./upload/activity";
+			if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
+				if (!fs.existsSync(dir)) {
+					fs.mkdirSync(dir);
+				}
+				extention = path.extname(file.name);
+				filename = new Date().getTime() + extention;
+				file.mv(dir + '/' + filename, function (err) {
+					if (err) {
+						res.status(422).json({message: "Error in activity image upload"});
+					} else {
+						json.photo = "/upload/activity/" + filename;
+						var activityObject = new Activity(json);
+						activityObject.save(function(err,data){
+							if(err) {
+								res.status(422).json({ message: "Error occured in creating activity" });
+							} else {
+								res.status(200).json({ message: "Activity has been added", activity:data});
+							}
+						});
+					}
+				});
+			} else {
+				res.status(415).json({ message: "This File format is not allowed"});
+			}
+		}
+		else
+		{
+			var activityObject = new Activity(json);
+			activityObject.save(function(err,data){
+				if(err) {
+					res.status(422).json({message: "Error in creating activity : ",err});
+				} else {
+					res.status(200).json({ message: "Activity has been added", activity:data});
+				}
+			});
+		}
 	}
 	else
 	{
-		var activityObject = new Activity(json);
-		activityObject.save(function(err,data){
-			if(err) {
-				res.status(422).json({message: "Error in creating activity : ",err});
-			} else {
-				res.status(200).json({ message: "Activity has been added", activity:data});
-			}
-		});
+		res.status(config.BAD_REQUEST).json({
+            message: "Validation Error ",
+            error: errors
+        });
 	}
 });
 
@@ -104,35 +142,53 @@ router.post('/', function(req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.put('/',function(req,res,next){
-	var json = req.body;
-    if (req.files) {
-        var file = req.files.file;
-        var dir = "./upload/activity";
-        if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-            }
-            extention = path.extname(file.name);
-            filename = new Date().getTime() + extention;
-            file.mv(dir + '/' + filename, function (err) {
-                if (err) {
-                    res.status(422).json({message: "Error in activity image upload"});
-                } else {
-                    data = {};
-                    if (req.body) {
-                        data = req.body;
-                    }
-                    data.photo = "/upload/activity/" + filename;
-                    updateActivity(req.body.id, data, res);
-                }
-            });
-        } else {
-            res.status(415).json({ message: "This File format is not allowed"});
+	var schema = {
+        'id': {
+            notEmpty: true,
+            errorMessage: "To update activity, activity id is required"
         }
-    } else {
-        data = req.body;
-        updateActivity(req.body.id, data, res);
-    }
+    };
+	req.checkBody(schema);
+    var errors = req.validationErrors();
+	if(!errors)
+	{
+		var json = req.body;
+		if (req.files) {
+			var file = req.files.file;
+			var dir = "./upload/activity";
+			if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
+				if (!fs.existsSync(dir)) {
+					fs.mkdirSync(dir);
+				}
+				extention = path.extname(file.name);
+				filename = new Date().getTime() + extention;
+				file.mv(dir + '/' + filename, function (err) {
+					if (err) {
+						res.status(422).json({message: "Error in activity image upload"});
+					} else {
+						data = {};
+						if (req.body) {
+							data = req.body;
+						}
+						data.photo = "/upload/activity/" + filename;
+						updateActivity(req.body.id, data, res);
+					}
+				});
+			} else {
+				res.status(415).json({ message: "This File format is not allowed"});
+			}
+		} else {
+			data = req.body;
+			updateActivity(req.body.id, data, res);
+		}
+	}
+	else
+	{
+		res.status(config.BAD_REQUEST).json({
+            message: "Validation Error ",
+            error: errors
+        });
+	}
 });
 
 /**
@@ -148,14 +204,32 @@ router.put('/',function(req,res,next){
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/',function(req,res,next){
-	var json = {'isDeleted' : true};
-    Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, responce) {
-        if (err) {
-			res.status(422).json({ message: "Activity delete operation has been failed" });
-        } else {
-			res.status(200).json({message: "Activity has been deleted."});
+	var schema = {
+        'id': {
+            notEmpty: true,
+            errorMessage: "To delete activity, activity id is required"
         }
-    });
+    };
+	req.checkBody(schema);
+    var errors = req.validationErrors();
+	if(!errors)
+	{
+		var json = {'isDeleted' : true};
+		Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, responce) {
+			if (err) {
+				res.status(422).json({ message: "Activity delete operation has been failed" });
+			} else {
+				res.status(200).json({message: "Activity has been deleted."});
+			}
+		});
+	}
+	else
+	{
+		res.status(config.BAD_REQUEST).json({
+            message: "Validation Error ",
+            error: errors
+        });
+	}
 });
 
 function updateActivity(id, data, res) {
