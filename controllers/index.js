@@ -3,25 +3,23 @@ var router = express.Router();
 var config = require('../config');
 var moment = require('moment');
 var jwt = require('jsonwebtoken');
-var twilio = require('twilio');
 var path = require('path');
 var async = require('async');
 var twiliohelper = require('../helpers/twilio');
-var VoiceResponse = twilio.twiml.VoiceResponse;
 
 var User = require("../models/user");
 var Otp = require("../models/otp");
 
-require('dotenv').config();
-
 /* Include controllers to handle routes */
 var users = require('./users');
 var activities = require('./activities');
+var contacts = require('./contacts');
 var auth = require('../middlewares/auth');
 
 /* Link controllers with routes */
 router.use('/user', auth, users);
-router.use('/activities', auth, activities);
+router.use('/activity', auth, activities);
+router.use('/contact', auth, contacts);
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -54,7 +52,6 @@ router.post('/sendotp', function (req, res, next) {
     if (!errors) {
         // Generate random code
         var code = Math.floor(1000 + Math.random() * 9000);
-
         Otp.findOne({mobileNo: req.body.mobileNo}, function (err, otpData) {
             if (err) {
                 res.status(config.DATABASE_ERROR_STATUS).json({message: "OTP generation failed"});
@@ -65,7 +62,7 @@ router.post('/sendotp', function (req, res, next) {
                     if (err) {
                         res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in generating OTP"});
                     } else {
-                        twiliohelper.sendMessage(req.body.mobileNo, code, res);
+                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                     }
                 });
             } else { //generate new OTP
@@ -77,7 +74,7 @@ router.post('/sendotp', function (req, res, next) {
                     if (err) {
                         res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in generating OTP"});
                     } else {
-                        twiliohelper.sendMessage(req.body.mobileNo, code, res);
+                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                     }
                 });
             }
@@ -215,18 +212,7 @@ router.post('/voice_call', function (req, res, next) {
     var errors = req.validationErrors();
     var result = {};
     if (!errors) {
-        var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
-        var url = 'http://' + config.REMOTE_HOST + ':' + config.node_port + '/outbound/' + encodeURIComponent(req.body.mobileNo);
-        var options = {
-            to: req.body.mobileNo,
-            from: config.TWILIO_NUMBER,
-            url: url,
-        };
-        client.calls.create(options).then((message) => {
-            res.status(200).json({message: 'OTP has been sent via call.'});
-        }).catch((error) => {
-            res.status(500).json(error);
-        });
+        twiliohelper.createCall(req.body.mobileNo, url, 'OTP has been sent via call.', res);
     } else {
         res.status(config.BAD_REQUEST).json({message: errors});
     }
@@ -235,7 +221,6 @@ router.post('/voice_call', function (req, res, next) {
 // for twilio voice call callback
 router.post('/outbound/:mobileNo', function (request, response) {
     var mobileNo = request.params.mobileNo;
-    var twimlResponse = new VoiceResponse();
     var code = Math.floor(1000 + Math.random() * 9000);
     Otp.findOne({mobileNo: mobileNo}, function (err, otpData) {
         if (err) {
@@ -247,9 +232,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in updating OTP"});
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code, {voice: 'alice'});
-                    twimlResponse.dial(mobileNo);
-                    response.send(twimlResponse.toString());
+                    twiliohelper.dailCall(mobileNo, 'Your Gleekr OTP is ' + code, response);
                 }
             });
         } else {
@@ -262,9 +245,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in inserting OTP"});
                 } else {
-                    twimlResponse.say('Your Gleekr OTP is ' + code, {voice: 'alice'});
-                    twimlResponse.dial(mobileNo);
-                    response.send(twimlResponse.toString());
+                    twiliohelper.dailCall(mobileNo, 'Your Gleekr OTP is ' + code, response);
                 }
             });
         }
@@ -322,21 +303,4 @@ router.post('/refresh_token', function (req, res, next) {
         });
     }
 });
-
-/* Send OTP to provided number */
-var sendMessage = function (number, code, res) {
-    var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
-    client.messages.create({
-        to: number,
-        from: config.TWILIO_NUMBER,
-        body: 'Use ' + code + ' as Gleekr account security code'
-    }, function (error, message) {
-        if (!error) {
-            res.status(config.OK_STATUS).json({message: "OTP successfully sent"});
-        } else {
-            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in sending OTP"});
-        }
-    });
-}
-
 module.exports = router;
