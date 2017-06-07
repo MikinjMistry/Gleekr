@@ -10,11 +10,23 @@ var path = require('path');
 
 /* GET activity listing. */
 router.get('/', function(req, res, next) {
-  res.status(config.OK_STATUS).send('Activity controller called!');
+    Activity.find({'user_id' : req.userInfo.id}, function(err, activities){
+        if(err) {
+            result = {
+                    message: "Error in get all activities"
+                };
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
+        } else {
+            result = {
+                data : activities
+            }
+            res.status(config.OK_STATUS).json(result);
+        }
+    });
 });
 
 /**
- * @api {post} /activitY
+ * @api {post} /activity
  * @apiName Insert Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -138,7 +150,7 @@ router.post('/', function(req, res, next) {
 });
 
 /**
- * @api {put} /activitY
+ * @api {put} /activity
  * @apiName Update Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -213,7 +225,7 @@ router.put('/',function(req,res,next){
 });
 
 /**
- * @api {Delete} /activitY
+ * @api {Delete} /activity
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
