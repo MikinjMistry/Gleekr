@@ -8,6 +8,23 @@ var moment = require('moment');
 var fs = require('fs');
 var path = require('path');
 
+/* GET activity listing. */
+router.get('/', function(req, res, next) {
+    Activity.find({'user_id' : req.userInfo.id}, function(err, activities){
+        if(err) {
+            result = {
+                    message: "Error in get all activities"
+                };
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
+        } else {
+            result = {
+                data : activities
+            }
+            res.status(config.OK_STATUS).json(result);
+        }
+    });
+});
+
 /**
  * @api {post} /activitY Insert Activity
  * @apiName Insert Activity
@@ -32,7 +49,6 @@ var path = require('path');
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.post('/', function(req, res, next) {
-
     var schema = {
         'name': {
             notEmpty: true,
