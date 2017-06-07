@@ -14,7 +14,7 @@ router.get('/', function(req, res, next) {
 });
 
 /**
- * @api {post} /activities
+ * @api {post} /activitY
  * @apiName Insert Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -138,7 +138,7 @@ router.post('/', function(req, res, next) {
 });
 
 /**
- * @api {put} /activities
+ * @api {put} /activitY
  * @apiName Update Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -213,7 +213,7 @@ router.put('/',function(req,res,next){
 });
 
 /**
- * @api {Delete} /activities
+ * @api {Delete} /activitY
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
