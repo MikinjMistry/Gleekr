@@ -225,7 +225,7 @@ router.delete('/',function(req,res,next){
     if(!errors)
     {
     	var json = {'isDeleted' : true};
-        Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, responce) {
+        Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, response) {
             if (err) {
     			res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity delete operation has been failed" });
             } else {
@@ -243,7 +243,7 @@ router.delete('/',function(req,res,next){
 });
 
 function updateActivity(id, data, res) {
-    Activity.update({_id: {$eq: id}}, {$set: data}, function (err, responce) {
+    Activity.update({_id: {$eq: id}}, {$set: data}, function (err, response) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in creating activity" });
         } else {

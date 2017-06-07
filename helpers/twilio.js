@@ -1,20 +1,22 @@
 var twilio = require('twilio');
 var config = require('../config');
 var VoiceResponse = twilio.twiml.VoiceResponse;
-var json = {};
+var twilioFunctions = {};
 var client = new twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
+
 /* 
  * Send contact card to specified number
  * @param Integer number phone number to whom contact card will be send
  * @param String msg content of contact card
 */
-json.send_card = function (number, msg) {
+twilioFunctions.send_card = function (number, msg) {
     client.messages.create({
         to: number,
         from: config.TWILIO_NUMBER,
         body: msg
     });
 }
+
 /* 
  * Send sms to specified number
  * @param Integer to phone number to whom sms will be send
@@ -23,19 +25,20 @@ json.send_card = function (number, msg) {
  * @param String err Error Message
  * @param Object res Response object of parent api
 */
-json.sendSMS = function(to, msg, succ, err, res) {
+twilioFunctions.sendSMS = function (to, msg, succ, err, res) {
     client.messages.create({
         to: to,
         from: config.TWILIO_NUMBER,
         body: msg
     }, function (error, message) {
         if (!error) {
-            res.status(200).json({message: succ});
+            res.status(config.OK_STATUS).json({ message: succ });
         } else {
-            res.status(422).json({ message: err});
+            res.status(config.BAD_REQUEST).json({ message: err });
         }
     });
 }
+
 /* 
  * Create call to specified number
  * @param Integer to phone number on which call will be created
@@ -44,27 +47,29 @@ json.sendSMS = function(to, msg, succ, err, res) {
  * @param String err Error Message
  * @param Object res Response object of parent api
 */
-json.createCall = function(to, url, succ, res) {
+twilioFunctions.createCall = function (to, url, succ, res) {
     client.calls.create({
         to: req.body.mobileNo,
         from: config.TWILIO_NUMBER,
         url: url
     }).then((message) => {
-        res.status(200).json({message: succ});
+        res.status(config.OK_STATUS).json({ message: succ });
     }).catch((error) => {
-        res.status(500).json(error);
+        res.status(config.INTERNAL_SERVER_ERROR).json(error);
     });
 }
+
 /* 
  * Create call to specified number
  * @param Integer mobileNo phone number on which call will be dialed
  * @param String succ Success message
  * @param Object response Response object of parent api
 */
-json.dailCall = function(mobileNo, msg, response) {
+twilioFunctions.dailCall = function (mobileNo, msg, response) {
     var twimlResponse = new VoiceResponse();
-    wimlResponse.say(msg, {voice: 'alice'});
+    wimlResponse.say(msg, { voice: 'alice' });
     twimlResponse.dial(mobileNo);
     response.send(twimlResponse.toString());
 }
-module.exports = json;
+
+module.exports = twilioFunctions;

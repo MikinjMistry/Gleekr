@@ -15,10 +15,11 @@ var path = require('path');
 
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
+
 /**
- * @api {put} /user Update user profile - READY
+ * @api {put} /user Update user profile
  * @apiName Update Profile
- * @apiGroup User
+ * @apiGroup User - READY
  * @apiDescription You need to pass Form Data
  * 
  * @apiParam {String} name  form-data: full name of the user
@@ -72,9 +73,9 @@ router.put('/', function (req, res, next) {
 });
 
 /**
- * @api {delete} /user Delete user account - READY
+ * @api {delete} /user Delete user account
  * @apiName Delete User Account
- * @apiGroup User
+ * @apiGroup User - READY
  *
  * @apiHeader {String}  Content-Type application/json
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -83,7 +84,7 @@ router.put('/', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/', function (req, res, next) {
-    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { 'isDeleted': true } }, function (err, responce) {
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { isDeleted: true } }, function (err, response) {
         if (err) {
 			result = {
                 message: "Error in deleting user account"
@@ -99,9 +100,9 @@ router.delete('/', function (req, res, next) {
 });
 
 /**
- * @api {post} /user/change_number Change phone number - READY
+ * @api {post} /user/change_number Change phone number
  * @apiName Change Number
- * @apiGroup User
+ * @apiGroup User - READY
  * 
  * @apiParam {String} newMobileNo New phone number on which OTP will be sent
  * 
@@ -124,7 +125,7 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: null }, function (err, userData) {
+        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: {$ne: true} }, function (err, userData) {
             if (err) {
                 // Error in finding user
                 result = {
@@ -134,7 +135,7 @@ router.post('/change_number', function (req, res, next) {
             }
 
             if (userData) { // User found
-                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: null }, function (err, newUserData) {
+                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: {$ne: true} }, function (err, newUserData) {
                     // finding new number is already registered or not
                     if (err) {
                         // Error in find operation
@@ -163,7 +164,7 @@ router.post('/change_number', function (req, res, next) {
 
                             if (otpData) {
                                 var json = { code: code, modified_datetime: new Date() };
-                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, responce) {
+                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, response) {
                                     if (err) {
                                         result = {
                                             message: "Error occured in generating OTP"
@@ -211,9 +212,9 @@ router.post('/change_number', function (req, res, next) {
 });
 
 /**
- * @api {post} /user/verifyotp verify OTP for new number - READY
+ * @api {post} /user/verifyotp verify OTP for new number
  * @apiName Verify OTP for change number
- * @apiGroup User
+ * @apiGroup User - READY
  * 
  * @apiParam {String} mobileNo New phone number on which OTP has been sent
  * @apiParam {String} otp OTP recevied by user
@@ -248,10 +249,10 @@ router.post('/verifyotp', function (req, res, next) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
-                if (duration > process.env.OTP_EXPIRETION) {
+                if (duration > process.env.OTP_EXPIRATION) {
                     res.status(config.BAD_REQUEST).json({ message: "OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
-                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: null }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: {$ne: true} }, function (err, userData) {
                         if (err) {
                             res.status(config.NOT_FOUND).json({ message: "User not found" });
                         }
@@ -269,7 +270,7 @@ router.post('/verifyotp', function (req, res, next) {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
 
-                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, responce) {
+                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, response) {
                                 if (err) {
                                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating phone number" });
                                 } else {
@@ -302,9 +303,9 @@ router.post('/verifyotp', function (req, res, next) {
 });
 
 /**
-* @api {post} /user/send_card Send user's contact card - READY
+* @api {post} /user/send_card Send user's contact card
 * @apiName Send Contact Card
-* @apiGroup User
+* @apiGroup User - READY
 * @apiDescription SMS will be send to Phone Contacts [Done]
 * @apiDescription Gleekr in-app message will be send to Gleekr contacts [Will be covered with chat integration]
 * 
@@ -332,16 +333,16 @@ router.post('/send_card', function (req, res, next) {
                 res.status(config.NOT_FOUND).json({ message: "User data not found" });
             } else {
                 _.each(contactList, function (con) {
-                    User.findOne({ mobileNo: con, isDeleted: null }, function (err, data) {
+                    User.findOne({ mobileNo: con, isDeleted: {$ne: true} }, function (err, data) {
                         var msg = (userdata.name || 'Your friend') + ' has shared contact card from Gleekr.\n';
                         msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (userdata.email || '-') + '\nJob title : ' + (userdata.jobTitle || '-') + '\nCompany : ' + (userdata.companyName || '-');
-                        if (data != null) {
-                            console.log('Gleekr contact', 'user_' + data._id);
-                            console.log('Gleekr contact', msg);
+                        if (data) {
+                            console.log('Gleekr contact', 'user_' + data._id + " ---" + con);
+                            // console.log('Gleekr contact', msg);
                             client.publish('user_' + data._id,msg);
                         } else {
-                            console.log('Not Gleekr user');
-                            console.log(msg);
+                            console.log('Not Gleekr user', con);
+                            // console.log(msg);
                             twiliohelper.send_card(con, msg);
                         }
                         console.log(userdata);
@@ -359,9 +360,9 @@ router.post('/send_card', function (req, res, next) {
 });
 
 /**
- * @api {get} /user Get User profile - READY
+ * @api {get} /user Get User profile
  * @apiName User Profile Information
- * @apiGroup User
+ * @apiGroup User - READY
  *
  * @apiHeader {String}  Content-Type application/json
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -388,9 +389,9 @@ router.get('/', function (req, res, next) {
 });
 
 /**
-* @api {post} /user/sync_contacts Sync contacts - READY
+* @api {post} /user/sync_contacts Sync contacts
 * @apiName Sync Contacts
-* @apiGroup User
+* @apiGroup User - READY
 * 
 * @apiParam {Array} contacts raw data : Array of objects [{mobileNo: contact_no, firstName: first_name, lastName: last_name, email: email }]
 * 
@@ -421,7 +422,7 @@ router.post('/sync_contacts', function (req, res, next) {
         //Pluck all mobile numbers
         var mobileNumbers = _.pluck(req.body.contacts, "mobileNo");
 
-        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: null }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
+        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: {$ne: true} }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
             if (error) {
                 res.status(config.DATABASE_ERROR_STATUS).json({ message: "Problem occured while syncing your contacts" });
             }
@@ -456,7 +457,7 @@ router.post('/sync_contacts', function (req, res, next) {
 
 /* Update User details */
 function updateUser(id, data, res) {
-    User.update({ _id: { $eq: id } }, { $set: data }, function (err, responce) {
+    User.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
         if (err) {
             result = {
                 message: "Error in updating profile",
