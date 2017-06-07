@@ -480,7 +480,6 @@ router.post('/activity_actions', function (req, res, next) {
                     }
                     res.status(config.OK_STATUS).json(data);
                 });
-                res.status(config.OK_STATUS).json(userData);
             }else{
                 User.findOneAndUpdate({_id:req.userInfo.id},{
                     $push:{activities:req.body}
