@@ -455,6 +455,48 @@ router.post('/sync_contacts', function (req, res, next) {
     }
 });
 
+
+router.post('/activity_actions', function (req, res, next) {
+    var schema = {
+        'activity_id': {
+            notEmpty: true,
+            errorMessage: "Field is required."
+        }
+    };
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+    if(!errors){
+        User.findOne({_id:req.userInfo.id,"activities.activity_id":req.body.activity_id},function(err,userData){
+            console.log("userdata:",userData);
+            if(err){
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity",err:err});
+            }
+            if(userData){
+                User.findOneAndUpdate({_id:req.userInfo.id,"activities.activity_id":req.body.activity_id},{
+                    $set:{"activities.$":req.body}
+                },function(err,data){
+                    if(err){
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity",err:err});
+                    }
+                    res.status(config.OK_STATUS).json(data);
+                });
+                res.status(config.OK_STATUS).json(userData);
+            }else{
+                User.findOneAndUpdate({_id:req.userInfo.id},{
+                    $push:{activities:req.body}
+                },function(err,data){
+                    if(err){
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity",err:err});
+                    }
+                    res.status(config.OK_STATUS).json(data);
+                });
+            }
+        });
+    }else{
+        res.status(config.BAD_REQUEST).json({message: errors});
+    }
+});
+
 /* Update User details */
 function updateUser(id, data, res) {
     User.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
