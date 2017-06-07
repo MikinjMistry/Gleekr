@@ -4,6 +4,7 @@ var config = require('../config');
 var Activity = require("../models/activity");
 var Bot = require("../models/bot");
 
+var moment = require('moment');
 var fs = require('fs');
 var path = require('path');
 
@@ -69,7 +70,17 @@ router.post('/', function(req, res, next) {
     {
 
         var json = req.body;
-    	json.user_id = req.userInfo.id;
+		
+		if(json.hasOwnProperty('startTime'))
+		{
+			json.startTime = moment(json.startTime, 'HH:mm');
+		}
+		if(json.hasOwnProperty('endTime'))
+		{
+			json.endTime = moment(json.startTime, 'HH:mm');
+		}
+
+		json.user_id = req.userInfo.id;
     	json.isDeleted = true;
     	if (req.files) {
     		var file = req.files.file;
