@@ -23,7 +23,7 @@ var ActivitySchema = new Schema({
     description: String,
     noOfParticipants: Number,
     costPerPerson: Number,
-    isDeleted: Boolean,
+    isDeleted: { type : Boolean, default : false },
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     chatMessages: [ActivityChatSchema] //Embedding ActivityChatSchema into Activity

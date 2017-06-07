@@ -10,25 +10,37 @@ var path = require('path');
 
 /* GET activity listing. */
 router.get('/', function(req, res, next) {
-  res.status(config.OK_STATUS).send('Activity controller called!');
+    Activity.find({'user_id' : req.userInfo.id}, function(err, activities){
+        if(err) {
+            result = {
+                    message: "Error in get all activities"
+                };
+            res.status(config.DATABASE_ERROR_STATUS).json(result);
+        } else {
+            result = {
+                data : activities
+            }
+            res.status(config.OK_STATUS).json(result);
+        }
+    });
 });
 
 /**
- * @api {post} /activitY
+ * @api {post} /activitY Insert Activity
  * @apiName Insert Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
  * 
- * @apiParam {file} photo form-data: file object for image [jpg,png]
- * @apiParam {String} name  form-data: Activity name
- * @apiParam {Date} startDate form-data: Activity start date 
- * @apiParam {Date} startTime form-data: Activity start time
- * @apiParam {Date} endDate form-data: Activity end time
- * @apiParam {Date} endTime form-data: Activity end time
- * @apiParam {String} location form-data: Activity location
- * @apiParam {String} description form-data: Activity description
- * @apiParam {Number} noOfParticipants form-data: Number of participants
- * @apiParam {Number} costPerPerson form-data: cost per person
+ * @apiParam {file} photo form-data: file object for image [jpg,png] (optional)
+ * @apiParam {String} name  form-data: Activity name (required)
+ * @apiParam {Date} startDate form-data: Activity start date (required)
+ * @apiParam {Date} startTime form-data: Activity start time (required)
+ * @apiParam {Date} endDate form-data: Activity end time (required)
+ * @apiParam {Date} endTime form-data: Activity end time (required)
+ * @apiParam {String} location form-data: Activity location (required)
+ * @apiParam {String} description form-data: Activity description (optional)
+ * @apiParam {Number} noOfParticipants form-data: Number of participants (optional)
+ * @apiParam {Number} costPerPerson form-data: cost per person (optional)
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
@@ -37,7 +49,6 @@ router.get('/', function(req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.post('/', function(req, res, next) {
-
     var schema = {
         'name': {
             notEmpty: true,
@@ -138,7 +149,7 @@ router.post('/', function(req, res, next) {
 });
 
 /**
- * @api {put} /activitY
+ * @api {put} /activitY Update Activity
  * @apiName Update Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -172,7 +183,6 @@ router.put('/',function(req,res,next){
     var errors = req.validationErrors();
     if(!errors)
     {
-
     	var json = req.body;
         if (req.files) {
             var file = req.files.file;
@@ -213,7 +223,47 @@ router.put('/',function(req,res,next){
 });
 
 /**
- * @api {Delete} /activitY
+ * @api {get} /activitY Get activity details
+ * @apiName Get activity details
+ * @apiGroup Activity
+ * 
+ * @apiParam {String} id Activity id
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key.
+ * 
+ * @apiSuccess (Success 200) {String} message Success message.
+ * @apiError (Error 4xx) {String} message Validation or error message.
+ */
+router.get('/',function(req,res,next){
+    var schema = {
+        'id': {
+            notEmpty: true,
+            errorMessage: "Activity id is required to retrive details"
+        }
+    };
+    req.checkQuery(schema);
+    var errors = req.validationErrors();
+    if(!errors)
+    {
+        Activity.findOne({_id: req.query.id,isDeleted: {$ne: true}},function (err, activityData) {
+            if (err) {
+    			res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity retrival operation has been failed" });
+            } else {
+    			res.status(config.OK_STATUS).json({activity: activityData});
+            }
+        });
+    }
+    else
+    {
+        res.status(config.BAD_REQUEST).json({
+            message: "Validation Error ",
+            error: errors
+        });
+    }
+});
+
+/**
+ * @api {Delete} /activitY Delete Activity
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
@@ -231,7 +281,7 @@ router.delete('/',function(req,res,next){
             errorMessage: "To delete activity, activity id is required"
         }
     };
-    req.checkBody(schema);
+    req.checkQuery(schema);
     var errors = req.validationErrors();
     if(!errors)
     {
