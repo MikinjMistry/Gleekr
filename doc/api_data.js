@@ -1,7 +1,7 @@
 define({ "api": [
   {
     "type": "Delete",
-    "url": "/activitY",
+    "url": "/activity",
     "title": "Delete Activity",
     "name": "Delete_Activity",
     "group": "Activity",
@@ -63,7 +63,7 @@ define({ "api": [
   },
   {
     "type": "get",
-    "url": "/activitY",
+    "url": "/activity/details",
     "title": "Get activity details",
     "name": "Get_activity_details",
     "group": "Activity",
@@ -125,7 +125,7 @@ define({ "api": [
   },
   {
     "type": "post",
-    "url": "/activitY",
+    "url": "/activity",
     "title": "Insert Activity",
     "name": "Insert_Activity",
     "group": "Activity",
@@ -138,70 +138,70 @@ define({ "api": [
             "type": "file",
             "optional": false,
             "field": "photo",
-            "description": "<p>form-data: file object for image [jpg,png]</p>"
+            "description": "<p>form-data: file object for image [jpg,png] (optional)</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
             "optional": false,
             "field": "name",
-            "description": "<p>form-data: Activity name</p>"
+            "description": "<p>form-data: Activity name (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startDate",
-            "description": "<p>form-data: Activity start date</p>"
+            "description": "<p>form-data: Activity start date (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startTime",
-            "description": "<p>form-data: Activity start time</p>"
+            "description": "<p>form-data: Activity start time (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "endDate",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end time (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "endTime",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end time (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
             "optional": false,
             "field": "location",
-            "description": "<p>form-data: Activity location</p>"
+            "description": "<p>form-data: Activity location (required)</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
             "optional": false,
             "field": "description",
-            "description": "<p>form-data: Activity description</p>"
+            "description": "<p>form-data: Activity description (optional)</p>"
           },
           {
             "group": "Parameter",
             "type": "Number",
             "optional": false,
             "field": "noOfParticipants",
-            "description": "<p>form-data: Number of participants</p>"
+            "description": "<p>form-data: Number of participants (optional)</p>"
           },
           {
             "group": "Parameter",
             "type": "Number",
             "optional": false,
             "field": "costPerPerson",
-            "description": "<p>form-data: cost per person</p>"
+            "description": "<p>form-data: cost per person (optional)</p>"
           }
         ]
       }
@@ -258,7 +258,7 @@ define({ "api": [
   },
   {
     "type": "put",
-    "url": "/activitY",
+    "url": "/activity",
     "title": "Update Activity",
     "name": "Update_Activity",
     "group": "Activity",
