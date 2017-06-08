@@ -213,6 +213,7 @@ router.post('/voice_call', function (req, res, next) {
     var errors = req.validationErrors();
     var result = {};
     if (!errors) {
+		var url = 'http://' + config.REMOTE_HOST + ':' + config.node_port + '/outbound/' + encodeURIComponent(req.body.mobileNo);
         twiliohelper.createCall(req.body.mobileNo, url, 'OTP has been sent via call.', res);
     } else {
         res.status(config.BAD_REQUEST).json({ message: errors });
@@ -223,17 +224,19 @@ router.post('/voice_call', function (req, res, next) {
 router.post('/outbound/:mobileNo', function (request, response) {
     var mobileNo = request.params.mobileNo;
     var code = Math.floor(1000 + Math.random() * 9000);
+    var voiceMsg = 'Your Gleekr OTP is ' + code + ' I repeat Your Gleekr OTP is ' + code;
+
     Otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in finding OTP" });
+            res.status(config.BAD_REQUEST).json({ message: "Invalid OTP" });
         }
         if (otpData) {
             var json = { code: code, modified_datetime: new Date() };
-            Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, response) {
+            Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating OTP" });
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "OTP could not be generated" });
                 } else {
-                    twiliohelper.dailCall(mobileNo, 'Your Gleekr OTP is ' + code, response);
+                    twiliohelper.dailCall(mobileNo, voiceMsg, response);
                 }
             });
         } else {
@@ -244,9 +247,9 @@ router.post('/outbound/:mobileNo', function (request, response) {
             var otpObject = new Otp(json);
             otpObject.save(function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in inserting OTP" });
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "OTP could not be generated" });
                 } else {
-                    twiliohelper.dailCall(mobileNo, 'Your Gleekr OTP is ' + code, response);
+                    twiliohelper.dailCall(mobileNo, voiceMsg, response);
                 }
             });
         }
