@@ -223,7 +223,7 @@ router.put('/',function(req,res,next){
 });
 
 /**
- * @api {get} /activitY Get activity details
+ * @api {get} /activity/details Get activity details
  * @apiName Get activity details
  * @apiGroup Activity
  * 
@@ -234,7 +234,7 @@ router.put('/',function(req,res,next){
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.get('/',function(req,res,next){
+router.get('/details',function(req,res,next){
     var schema = {
         'id': {
             notEmpty: true,
