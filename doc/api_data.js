@@ -2,7 +2,7 @@ define({ "api": [
   {
     "type": "Delete",
     "url": "/activity",
-    "title": "Delete Activity",
+    "title": "Delete Activity - READY",
     "name": "Delete_Activity",
     "group": "Activity",
     "parameter": {
@@ -63,8 +63,8 @@ define({ "api": [
   },
   {
     "type": "get",
-    "url": "/activity/details",
-    "title": "Get activity details",
+    "url": "/activity/details?id=:id",
+    "title": "Get activity details - READY",
     "name": "Get_activity_details",
     "group": "Activity",
     "parameter": {
@@ -88,7 +88,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "x-access-token",
-            "description": "<p>Users unique access-key.</p>"
+            "description": "<p>Users unique access-key</p>"
           }
         ]
       }
@@ -101,7 +101,14 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Success message.</p>"
+            "description": "<p>Success message</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Json",
+            "optional": false,
+            "field": "activity",
+            "description": "<p>Activity details</p>"
           }
         ]
       }
@@ -114,7 +121,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Validation or error message.</p>"
+            "description": "<p>Validation or error message</p>"
           }
         ]
       }
@@ -126,7 +133,7 @@ define({ "api": [
   {
     "type": "post",
     "url": "/activity",
-    "title": "Insert Activity",
+    "title": "Insert Activity - READY",
     "name": "Insert_Activity",
     "group": "Activity",
     "description": "<p>You need to pass Form Data</p>",
@@ -136,72 +143,72 @@ define({ "api": [
           {
             "group": "Parameter",
             "type": "file",
-            "optional": false,
-            "field": "photo",
-            "description": "<p>form-data: file object for image [jpg,png] (optional)</p>"
+            "optional": true,
+            "field": "file",
+            "description": "<p>form-data: file object for image [jpg,png]</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
             "optional": false,
             "field": "name",
-            "description": "<p>form-data: Activity name (required)</p>"
+            "description": "<p>form-data: Activity name</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startDate",
-            "description": "<p>form-data: Activity start date (required)</p>"
+            "description": "<p>form-data: Activity start date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startTime",
-            "description": "<p>form-data: Activity start time (required)</p>"
+            "description": "<p>form-data: Activity start time</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
-            "optional": false,
+            "optional": true,
             "field": "endDate",
-            "description": "<p>form-data: Activity end time (required)</p>"
+            "description": "<p>form-data: Activity end time</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
-            "optional": false,
+            "optional": true,
             "field": "endTime",
-            "description": "<p>form-data: Activity end time (required)</p>"
+            "description": "<p>form-data: Activity end time</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
             "optional": false,
             "field": "location",
-            "description": "<p>form-data: Activity location (required)</p>"
+            "description": "<p>form-data: Activity location</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
-            "optional": false,
+            "optional": true,
             "field": "description",
-            "description": "<p>form-data: Activity description (optional)</p>"
+            "description": "<p>form-data: Activity description</p>"
           },
           {
             "group": "Parameter",
             "type": "Number",
-            "optional": false,
+            "optional": true,
             "field": "noOfParticipants",
-            "description": "<p>form-data: Number of participants (optional)</p>"
+            "description": "<p>form-data: Number of participants</p>"
           },
           {
             "group": "Parameter",
-            "type": "Number",
-            "optional": false,
+            "type": "Decimal",
+            "optional": true,
             "field": "costPerPerson",
-            "description": "<p>form-data: cost per person (optional)</p>"
+            "description": "<p>form-data: cost per person</p>"
           }
         ]
       }
@@ -259,7 +266,7 @@ define({ "api": [
   {
     "type": "put",
     "url": "/activity",
-    "title": "Update Activity",
+    "title": "Update Activity - READY",
     "name": "Update_Activity",
     "group": "Activity",
     "description": "<p>You need to pass Form Data</p>",
@@ -277,7 +284,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "file",
             "optional": false,
-            "field": "photo",
+            "field": "file",
             "description": "<p>form-data: file object for image [jpg,png]</p>"
           },
           {
@@ -338,10 +345,10 @@ define({ "api": [
           },
           {
             "group": "Parameter",
-            "type": "Number",
+            "type": "Decimal",
             "optional": false,
             "field": "costPerPerson",
-            "description": "<p>form-data: cost per person</p>"
+            "description": "<p>form-data: cost per person (2 decimal values allowed)</p>"
           }
         ]
       }
@@ -1062,14 +1069,14 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Success message.</p>"
+            "description": "<p>Success message</p>"
           },
           {
             "group": "Success 200",
             "type": "Json",
             "optional": false,
             "field": "User",
-            "description": "<p>data.</p>"
+            "description": "<p>data</p>"
           }
         ]
       }
@@ -1082,7 +1089,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Validation or error message.</p>"
+            "description": "<p>Validation or error message</p>"
           }
         ]
       }

@@ -86,12 +86,12 @@ router.put('/', function (req, res, next) {
 router.delete('/', function (req, res, next) {
     User.update({ _id: { $eq: req.userInfo.id } }, { $set: { isDeleted: true } }, function (err, response) {
         if (err) {
-			result = {
+            result = {
                 message: "Error in deleting user account"
             };
             res.status(config.DATABASE_ERROR_STATUS).json(result);
         } else {
-             var result = {
+            var result = {
                 message: "Account deleted successfully"
             };
             res.status(config.OK_STATUS).json(result);
@@ -125,7 +125,7 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: {$ne: true} }, function (err, userData) {
+        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: { $ne: true } }, function (err, userData) {
             if (err) {
                 // Error in finding user
                 result = {
@@ -135,7 +135,7 @@ router.post('/change_number', function (req, res, next) {
             }
 
             if (userData) { // User found
-                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: {$ne: true} }, function (err, newUserData) {
+                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: { $ne: true } }, function (err, newUserData) {
                     // finding new number is already registered or not
                     if (err) {
                         // Error in find operation
@@ -171,7 +171,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             } else {
@@ -187,7 +187,7 @@ router.post('/change_number', function (req, res, next) {
                                         };
                                         res.status(config.DATABASE_ERROR_STATUS).json(result);
                                     } else {
-                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use '+code +' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
+                                        twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
                                 });
                             }
@@ -252,7 +252,7 @@ router.post('/verifyotp', function (req, res, next) {
                 if (duration > process.env.OTP_EXPIRATION) {
                     res.status(config.BAD_REQUEST).json({ message: "OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
-                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: {$ne: true} }, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: { $ne: true } }, function (err, userData) {
                         if (err) {
                             res.status(config.NOT_FOUND).json({ message: "User not found" });
                         }
@@ -333,13 +333,13 @@ router.post('/send_card', function (req, res, next) {
                 res.status(config.NOT_FOUND).json({ message: "User data not found" });
             } else {
                 _.each(contactList, function (con) {
-                    User.findOne({ mobileNo: con, isDeleted: {$ne: true} }, function (err, data) {
+                    User.findOne({ mobileNo: con, isDeleted: { $ne: true } }, function (err, data) {
                         var msg = (userdata.name || 'Your friend') + ' has shared contact card from Gleekr.\n';
                         msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (userdata.email || '-') + '\nJob title : ' + (userdata.jobTitle || '-') + '\nCompany : ' + (userdata.companyName || '-');
                         if (data) {
                             console.log('Gleekr contact', 'user_' + data._id + " ---" + con);
                             // console.log('Gleekr contact', msg);
-                            client.publish('user_' + data._id,msg);
+                            client.publish('user_' + data._id, msg);
                         } else {
                             console.log('Not Gleekr user', con);
                             // console.log(msg);
@@ -367,23 +367,21 @@ router.post('/send_card', function (req, res, next) {
  * @apiHeader {String}  Content-Type application/json
  * @apiHeader {String}  x-access-token Users unique access-key
  *
- * @apiSuccess (Success 200) {String} message Success message.
- * @apiSuccess {Json} User data.
+ * @apiSuccess (Success 200) {String} message Success message
+ * @apiSuccess {Json} User data
  *
- * @apiError (Error 4xx) {String} message Validation or error message.
+ * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/', function (req, res, next) {
     User.findOne({ '_id': req.userInfo.id }, function (err, user) {
         if (err) {
-            result = {
-                message: "Error in get user profile"
-            };
-            res.status(config.DATABASE_ERROR_STATUS).json(result);
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in getting user profile" });
+        }
+
+        if (user) {
+            res.status(config.OK_STATUS).json(user);
         } else {
-            var result = {
-                data: user
-            };
-            res.status(config.OK_STATUS).json(result);
+            res.status(config.NOT_FOUND).json({ message: "User not found" });
         }
     });
 });
@@ -422,7 +420,7 @@ router.post('/sync_contacts', function (req, res, next) {
         //Pluck all mobile numbers
         var mobileNumbers = _.pluck(req.body.contacts, "mobileNo");
 
-        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: {$ne: true} }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
+        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: { $ne: true } }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
             if (error) {
                 res.status(config.DATABASE_ERROR_STATUS).json({ message: "Problem occured while syncing your contacts" });
             }
@@ -465,34 +463,34 @@ router.post('/activity_actions', function (req, res, next) {
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
-    if(!errors){
-        User.findOne({_id:req.userInfo.id,"activities.activity_id":req.body.activity_id},function(err,userData){
-            console.log("userdata:",userData);
-            if(err){
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity",err:err});
+    if (!errors) {
+        User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
+            console.log("userdata:", userData);
+            if (err) {
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity", err: err });
             }
-            if(userData){
-                User.findOneAndUpdate({_id:req.userInfo.id,"activities.activity_id":req.body.activity_id},{
-                    $set:{"activities.$":req.body}
-                },function(err,data){
-                    if(err){
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity",err:err});
+            if (userData) {
+                User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
+                    $set: { "activities.$": req.body }
+                }, function (err, data) {
+                    if (err) {
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity", err: err });
                     }
                     res.status(config.OK_STATUS).json(data);
                 });
-            }else{
-                User.findOneAndUpdate({_id:req.userInfo.id},{
-                    $push:{activities:req.body}
-                },function(err,data){
-                    if(err){
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity",err:err});
+            } else {
+                User.findOneAndUpdate({ _id: req.userInfo.id }, {
+                    $push: { activities: req.body }
+                }, function (err, data) {
+                    if (err) {
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity", err: err });
                     }
                     res.status(config.OK_STATUS).json(data);
                 });
             }
         });
-    }else{
-        res.status(config.BAD_REQUEST).json({message: errors});
+    } else {
+        res.status(config.BAD_REQUEST).json({ message: errors });
     }
 });
 

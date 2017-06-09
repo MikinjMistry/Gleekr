@@ -120,12 +120,11 @@ router.post('/verifyotp', function (req, res, next) {
             if (otpData) {
                 if (moment().diff(moment(otpData.updated_date), 'minutes') > config.OTP_EXPIRATION) { // Checking for expiration
                     res.status(401).json({ message: "Your OTP has expired" });
-                } else if (otpData.code == req.body.otp) {
+                } else if (otpData.code === req.body.otp) {
                     json = { mobileNo: otpData.mobileNo, isDeleted: false };
                     User.findOne(json, function (err, userData) {
                         if (err) {
-
-                            res.status(config.BAD_REQUEST).json({ message: "Error in finding User" });
+                            res.status(config.BAD_REQUEST).json({ message: "User not found" });
                         }
                         if (userData) {
                             var userJson = { id: userData._id, mobileNo: userData.mobileNo };
@@ -150,7 +149,7 @@ router.post('/verifyotp', function (req, res, next) {
                                         updateToken: function (callback) {
                                             User.update({ _id: { $eq: newUser._id } }, { $set: { 'refreshToken': refreshToken } }, function (err, response) {
                                                 if (err) {
-                                                    callback({ message: "Error in removing use account" }, null);
+                                                    callback({ message: "Error in removing user account" }, null);
                                                 }
                                                 callback(null, true);
                                             });

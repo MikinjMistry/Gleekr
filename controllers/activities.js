@@ -1,24 +1,26 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
+
 var Activity = require("../models/activity");
 var Bot = require("../models/bot");
+var User = require("../models/user");
 
 var moment = require('moment');
 var fs = require('fs');
 var path = require('path');
 
 /* GET activity listing. */
-router.get('/', function(req, res, next) {
-    Activity.find({'user_id' : req.userInfo.id}, function(err, activities){
-        if(err) {
+router.get('/', function (req, res, next) {
+    Activity.find({ 'user_id': req.userInfo.id }, function (err, activities) {
+        if (err) {
             result = {
-                    message: "Error in get all activities"
-                };
+                message: "Error in get all activities"
+            };
             res.status(config.DATABASE_ERROR_STATUS).json(result);
         } else {
             result = {
-                data : activities
+                data: activities
             }
             res.status(config.OK_STATUS).json(result);
         }
@@ -26,21 +28,21 @@ router.get('/', function(req, res, next) {
 });
 
 /**
- * @api {post} /activity Insert Activity
- * @apiName Insert Activity
+ * @api {post} /activity Insert Activity - READY
+ * @apiName Insert Activity 
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
  * 
- * @apiParam {file} photo form-data: file object for image [jpg,png] (optional)
- * @apiParam {String} name  form-data: Activity name (required)
- * @apiParam {Date} startDate form-data: Activity start date (required)
- * @apiParam {Date} startTime form-data: Activity start time (required)
- * @apiParam {Date} endDate form-data: Activity end time (required)
- * @apiParam {Date} endTime form-data: Activity end time (required)
- * @apiParam {String} location form-data: Activity location (required)
- * @apiParam {String} description form-data: Activity description (optional)
- * @apiParam {Number} noOfParticipants form-data: Number of participants (optional)
- * @apiParam {Number} costPerPerson form-data: cost per person (optional)
+ * @apiParam {file} [file] form-data: file object for image [jpg,png]
+ * @apiParam {String} name  form-data: Activity name
+ * @apiParam {Date} startDate form-data: Activity start date 
+ * @apiParam {Date} startTime form-data: Activity start time
+ * @apiParam {Date} [endDate] form-data: Activity end time
+ * @apiParam {Date} [endTime] form-data: Activity end time
+ * @apiParam {String} location form-data: Activity location
+ * @apiParam {String} [description] form-data: Activity description
+ * @apiParam {Number} [noOfParticipants] form-data: Number of participants
+ * @apiParam {Decimal} [costPerPerson] form-data: cost per person
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
@@ -48,55 +50,44 @@ router.get('/', function(req, res, next) {
  * @apiSuccess (Success 200) {Object} activity If activity successfully inserted.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.post('/', function(req, res, next) {
+router.post('/', function (req, res, next) {
     var schema = {
         'name': {
             notEmpty: true,
-            errorMessage: "Activity name is required"
+            errorMessage: "name is required"
         },
         'startDate': {
             notEmpty: true,
-            errorMessage: "Activity start date is required"
+            errorMessage: "start date is required"
         },
         'startTime': {
             notEmpty: true,
-            errorMessage: "Activity start time is required"
-        },
-        'endDate': {
-            notEmpty: true,
-            errorMessage: "Activity end date is required"
-        },
-        'endTime': {
-            notEmpty: true,
-            errorMessage: "Activity end time is required"
+            errorMessage: "start time is required"
         },
         'location': {
             notEmpty: true,
-            errorMessage: "Activity location is required"
+            errorMessage: "location is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
-    if(!errors)
-    {
+    if (!errors) {
 
         var json = req.body;
-		
-		if(json.hasOwnProperty('startTime'))
-		{
-			json.startTime = moment(json.startTime, 'HH:mm');
-		}
-		if(json.hasOwnProperty('endTime'))
-		{
-			json.endTime = moment(json.startTime, 'HH:mm');
-		}
 
-		json.user_id = req.userInfo.id;
-    	json.isDeleted = true;
-    	if (req.files) {
-    		var file = req.files.file;
+        if (json.hasOwnProperty('startTime')) {
+            json.startTime = moment(json.startTime, 'HH:mm');
+        }
+        if (json.hasOwnProperty('endTime')) {
+            json.endTime = moment(json.startTime, 'HH:mm');
+        }
+
+        json.user_id = req.userInfo.id;
+
+        if (req.files) {
+            var file = req.files.file;
             var dir = "./upload/activity";
-            if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
+            if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) !== -1) {
                 if (!fs.existsSync(dir)) {
                     fs.mkdirSync(dir);
                 }
@@ -104,58 +95,61 @@ router.post('/', function(req, res, next) {
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-    					res.status(config.MEDIA_ERROR_STATUS).json({message: "Error in activity image upload"});
+                        res.status(config.MEDIA_ERROR_STATUS).json({ message: "Error in activity image upload" });
                     } else {
                         json.photo = "/upload/activity/" + filename;
-    					var activityObject = new Activity(json);
-    					activityObject.save(function(err,data){
-    						if(err) {
-    							res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
-    						} else {
-    							botObj = new Bot({
-    								'user_id':req.userInfo.id,
-    								'activity_id':data._id,
-    								'actionType':'create'
-    							});
-    							botObj.save(function(err,data){});
-    							res.status(config.OK_STATUS).json({ message: "Activity has been added", activity:data});
-    						}
-    					});
+                        var activityObject = new Activity(json);
+                        activityObject.save(function (err, data) {
+                            if (err) {
+                                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
+                            } else {
+
+                                //Bot
+                                var botObj = new Bot({
+                                    'user_id': req.userInfo.id,
+                                    'activity_id': data._id,
+                                    'actionType': 'create'
+                                });
+                                botObj.save(function (err, data) { });
+
+                                //Set user's deault acitivity action to going
+
+                                res.status(config.OK_STATUS).json({ message: "Activity created successfully", activity: data });
+                            }
+                        });
                     }
                 });
             } else {
-                res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed"});
+                res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed" });
             }
-    	}
-    	else
-    	{
-    		var activityObject = new Activity(json);
-    		activityObject.save(function(err,data){
-    			if(err) {
-    				res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in creating activity : ",err});
-    			} else {
-    				res.status(config.OK_STATUS).json({ message: "Activity has been added", activity:data});
-    			}
-    		});
-    	}
+        }
+        else {
+            var activityObject = new Activity(json);
+            activityObject.save(function (err, data) {
+                if (err) {
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while creating activity : ", err });
+                } else {
+                    res.status(config.OK_STATUS).json({ message: "Activity created successfully", activity: data });
+                }
+            });
+        }
     }
-    else
-    {
+    else {
         res.status(config.BAD_REQUEST).json({
-            message: "Validation Error ",
+            message: "Validation Error",
             error: errors
         });
     }
 });
 
 /**
- * @api {put} /activity Update Activity
+ * @api {put} /activity Update Activity - READY
  * @apiName Update Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
  * 
  * @apiParam {String} id form-data: activity id that is going to update
- * @apiParam {file} photo form-data: file object for image [jpg,png]
+ * @apiParam {file} file form-data: file object for image [jpg,png]
  * @apiParam {String} name  form-data: Activity name
  * @apiParam {Date} startDate form-data: Activity start date 
  * @apiParam {Date} startTime form-data: Activity start time
@@ -164,26 +158,25 @@ router.post('/', function(req, res, next) {
  * @apiParam {String} location form-data: Activity location
  * @apiParam {String} description form-data: Activity description
  * @apiParam {Number} noOfParticipants form-data: Number of participants
- * @apiParam {Number} costPerPerson form-data: cost per person
+ * @apiParam {Decimal} costPerPerson form-data: cost per person (2 decimal values allowed)
  * 
  * @apiHeader {String}  x-access-token Users unique access-key.
  * 
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.put('/',function(req,res,next){
+router.put('/', function (req, res, next) {
 
     var schema = {
         'id': {
             notEmpty: true,
-            errorMessage: "To update activity, activity id is required"
+            errorMessage: "activity id is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
-    if(!errors)
-    {
-    	var json = req.body;
+    if (!errors) {
+        var json = req.body;
         if (req.files) {
             var file = req.files.file;
             var dir = "./upload/activity";
@@ -195,26 +188,25 @@ router.put('/',function(req,res,next){
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in activity image upload"});
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in activity image upload" });
                     } else {
                         data = {};
                         if (req.body) {
                             data = req.body;
                         }
                         data.photo = "/upload/activity/" + filename;
-                        updateActivity(req.body.id, data, res);
+                        updateActivity(req.body.id, data, req, res);
                     }
                 });
             } else {
-                res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed"});
+                res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed" });
             }
         } else {
             data = req.body;
-            updateActivity(req.body.id, data, res);
+            updateActivity(req.body.id, data, req, res);
         }
     }
-    else
-    {
+    else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
             error: errors
@@ -223,18 +215,20 @@ router.put('/',function(req,res,next){
 });
 
 /**
- * @api {get} /activity/details Get activity details
+ * @api {get} /activity/details?id=:id Get activity details - READY
  * @apiName Get activity details
  * @apiGroup Activity
  * 
  * @apiParam {String} id Activity id
  * 
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  x-access-token Users unique access-key
  * 
- * @apiSuccess (Success 200) {String} message Success message.
- * @apiError (Error 4xx) {String} message Validation or error message.
+ * @apiSuccess (Success 200) {String} message Success message
+ * @apiSuccess (Success 200) {Json} activity Activity details
+ * 
+ * @apiError (Error 4xx) {String} message Validation or error message
  */
-router.get('/details',function(req,res,next){
+router.get('/details', function (req, res, next) {
     var schema = {
         'id': {
             notEmpty: true,
@@ -243,27 +237,30 @@ router.get('/details',function(req,res,next){
     };
     req.checkQuery(schema);
     var errors = req.validationErrors();
-    if(!errors)
-    {
-        Activity.findOne({_id: req.query.id,isDeleted: {$ne: true}},function (err, activityData) {
+    if (!errors) {
+        Activity.findOne({ _id: req.query.id, isDeleted: { $ne: true } }, function (err, activityData) {
             if (err) {
-    			res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity retrival operation has been failed" });
-            } else {
-    			res.status(config.OK_STATUS).json({activity: activityData});
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity not found" });
             }
+
+            if (activityData) {
+                res.status(config.OK_STATUS).json(activityData);
+            } else {
+                res.status(config.NOT_FOUND).json({ message: "Activity not found" });
+            }
+
         });
     }
-    else
-    {
+    else {
         res.status(config.BAD_REQUEST).json({
-            message: "Validation Error ",
+            message: "Validation Error",
             error: errors
         });
     }
 });
 
 /**
- * @api {Delete} /activity Delete Activity
+ * @api {Delete} /activity Delete Activity - READY
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
@@ -274,28 +271,26 @@ router.get('/details',function(req,res,next){
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.delete('/',function(req,res,next){
+router.delete('/', function (req, res, next) {
     var schema = {
         'id': {
             notEmpty: true,
-            errorMessage: "To delete activity, activity id is required"
+            errorMessage: "activity id is required"
         }
     };
     req.checkQuery(schema);
     var errors = req.validationErrors();
-    if(!errors)
-    {
-    	var json = {'isDeleted' : true};
-        Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, response) {
+    if (!errors) {
+        var json = { 'isDeleted': true };
+        Activity.update({ _id: { $eq: req.query.id } }, { $set: json }, function (err, response) {
             if (err) {
-    			res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity delete operation has been failed" });
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity could not be deleted" });
             } else {
-    			res.status(config.OK_STATUS).json({message: "Activity has been deleted."});
+                res.status(config.OK_STATUS).json({ message: "Activity deleted successfully" });
             }
         });
     }
-    else
-    {
+    else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
             error: errors
@@ -303,18 +298,18 @@ router.delete('/',function(req,res,next){
     }
 });
 
-function updateActivity(id, data, res) {
-    Activity.update({_id: {$eq: id}}, {$set: data}, function (err, response) {
+function updateActivity(id, data, req, res) {
+    Activity.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in creating activity" });
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while creating activity" });
         } else {
-			botObj = new Bot({
-				'user_id':req.userInfo.id,
-				'activity_id':id,
-				'actionType':'update'
-			});
-			botObj.save(function(err,data){});
-            res.status(config.OK_STATUS).json({message: "Activity has been updated"});
+            botObj = new Bot({
+                'user_id': req.userInfo.id,
+                'activity_id': id,
+                'actionType': 'update'
+            });
+            botObj.save(function (err, data) { });
+            res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
         }
     });
 }
