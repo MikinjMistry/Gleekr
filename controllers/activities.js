@@ -3,7 +3,6 @@ var router = express.Router();
 var config = require('../config');
 
 var Activity = require("../models/activity");
-var Bot = require("../models/bot");
 var User = require("../models/user");
 
 var bothelper = require('../helpers/bot_helpers');
@@ -101,34 +100,15 @@ router.post('/', function (req, res, next) {
                         res.status(config.MEDIA_ERROR_STATUS).json({message: "Error in activity image upload"});
                     } else {
                         json.photo = "/upload/activity/" + filename;
-                        var activityObject = new Activity(json);
-                        activityObject.save(function (err, data) {
-                            if (err) {
-                                res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in creating activity"});
-                            } else {
-                                //Bot
-                                insertBot({'user_id': req.userInfo.id, 'activity_id': data._id, 'actionType': 'create'});
-
-                                //Set user's deault acitivity action to going
-
-                                res.status(config.OK_STATUS).json({message: "Activity created successfully", activity: data});
-                            }
-                        });
+                        insertActivity(json, req, res)
                     }
                 });
             } else {
                 res.status(config.MEDIA_ERROR_STATUS).json({message: "This File format is not allowed"});
             }
         } else {
-            var activityObject = new Activity(json);
-            activityObject.save(function (err, data) {
-                if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured while creating activity : ", err});
-                } else {
-                    insertBot({'user_id': req.userInfo.id, 'activity_id': data._id, 'actionType': 'create'});
-                    res.status(config.OK_STATUS).json({message: "Activity created successfully", activity: data});
-                }
-            });
+            // insert activity
+			insertActivity(json, req, res)
         }
     } else {
         res.status(config.BAD_REQUEST).json({
@@ -293,13 +273,12 @@ router.delete('/', function (req, res, next) {
 });
 
 
-
 /**
  * @api {POST} /activity/actions Activity action
  * @apiName Activity action
  * @apiGroup Activity
  * 
- * @apiParam {String} id Activity id 
+ * @apiParam {String} activity_id Activity id 
  * @apiParam {Boolean} isPinned Activity user pin status [true,false] 
  * @apiParam {String} action Activity user action status ["invited", "going", "not_interested"]
  * 
@@ -321,9 +300,8 @@ router.post('/actions', function (req, res, next) {
     if (!errors) {
         if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
             User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
-                console.log("userdata:", userData);
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity", err: err});
+                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
                 }
                 if (userData) {
                     User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
@@ -334,25 +312,25 @@ router.post('/actions', function (req, res, next) {
                         }
                         userActivityAction(req, res);
                     });
-
                 } else {
                     User.findOneAndUpdate({_id: req.userInfo.id}, {
                         $push: {activities: req.body}
                     }, function (err, data) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity", err: err});
+                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
                         }
                         userActivityAction(req, res);
                     });
                 }
             });
         } else {
-            res.status(config.BAD_REQUEST).json({message: "You must need to send isPinned or action paramiter at a time"});
+            res.status(config.BAD_REQUEST).json({message: "You need to send either isPinned or action parameter"});
         }
     } else {
         res.status(config.BAD_REQUEST).json({message: "Validation error", error: errors});
     }
 });
+
 
 function userActivityAction(req, res) {
     if (req.body.hasOwnProperty('isPinned') && req.body.hasOwnProperty('action')) {
@@ -416,29 +394,51 @@ function userActivityAction(req, res) {
     }
 }
 
-
-
-
 function updateActivity(id, data, req, res) {
     Activity.update({_id: {$eq: id}}, {$set: data}, function (err, response) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured while creating activity"});
         } else {
-            insertBot({'user_id': req.userInfo.id, 'activity_id': id, 'actionType': 'update'});
+			bothelper.add({
+				'user_id': req.userInfo.id,
+				'activity_id': id,
+				'actionType': 'update'
+			}, function (err, result) {});
             res.status(config.OK_STATUS).json({message: "Activity updated successfully"});
         }
     });
 }
 
-function insertBot(botData) {
-    botObj = new Bot(botData);
-    botObj.save(function (err, data) {
-        if (err) {
-            return false;
-        } else {
-            return true;
-        }
-    });
+function insertActivity(objData, req, res) {
+	var activityObject = new Activity(objData);
+		activityObject.save(function (err, acitivityData) {
+			if (err) {
+				res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in creating activity"});
+			} else {
+				// Add action in bot
+				bothelper.add({
+					'user_id': req.userInfo.id,
+					'activity_id': acitivityData._id,
+					'actionType': 'create'
+				}, function (err, result) {});
+
+				//Set user's deault acitivity action to going
+				User.findOneAndUpdate({_id: req.userInfo.id}, {
+					$push: {activities: { 'activity_id': acitivityData._id, 'action': 'going' } }
+				}, function (err, data) {
+					if (err) {
+						res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+					}
+					bothelper.add({
+						'user_id': req.userInfo.id,
+						'activity_id': acitivityData._id,
+						'actionType': 'going'
+					}, function (err, result) {});
+				});
+
+				res.status(config.OK_STATUS).json({message: "Activity created successfully", activity: acitivityData});
+			}
+		});
 }
 
 module.exports = router;
