@@ -103,14 +103,8 @@ router.post('/', function (req, res, next) {
                             if (err) {
                                 res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
                             } else {
-
                                 //Bot
-                                var botObj = new Bot({
-                                    'user_id': req.userInfo.id,
-                                    'activity_id': data._id,
-                                    'actionType': 'create'
-                                });
-                                botObj.save(function (err, data) { });
+                                insertBot({ 'user_id': req.userInfo.id, 'activity_id': data._id, 'actionType': 'create' });
 
                                 //Set user's deault acitivity action to going
 
@@ -129,6 +123,7 @@ router.post('/', function (req, res, next) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while creating activity : ", err });
                 } else {
+					insertBot({ 'user_id': req.userInfo.id, 'activity_id': data._id, 'actionType': 'create' });
                     res.status(config.OK_STATUS).json({ message: "Activity created successfully", activity: data });
                 }
             });
@@ -303,15 +298,22 @@ function updateActivity(id, data, req, res) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while creating activity" });
         } else {
-            botObj = new Bot({
-                'user_id': req.userInfo.id,
-                'activity_id': id,
-                'actionType': 'update'
-            });
-            botObj.save(function (err, data) { });
+            insertBot({ 'user_id': req.userInfo.id, 'activity_id': id, 'actionType': 'update' });
             res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
         }
     });
+}
+
+function insertBot(botData) {
+	botObj = new Bot(botData);
+	botObj.save(function (err, data) {
+		if(err) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	});
 }
 
 module.exports = router;
