@@ -13,13 +13,11 @@ var Otp = require("../models/otp");
 /* Include controllers to handle routes */
 var users = require('./users');
 var activities = require('./activities');
-var contacts = require('./contacts');
 var auth = require('../middlewares/auth');
 
 /* Link controllers with routes */
 router.use('/user', auth, users);
 router.use('/activity', auth, activities);
-router.use('/contact', auth, contacts);
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
