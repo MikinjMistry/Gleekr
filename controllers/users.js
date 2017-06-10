@@ -9,6 +9,7 @@ var twiliohelper = require('../helpers/twilio');
 var Otp = require("../models/otp");
 var User = require("../models/user");
 var Group = require("../models/group");
+var Bot = require("../models/bot");
 
 var fs = require('fs');
 var path = require('path');
@@ -453,6 +454,34 @@ router.post('/sync_contacts', function (req, res, next) {
     } else {
         res.status(config.BAD_REQUEST).json({message: errors});
     }
+});
+
+/**
+ * @api {get} /user/actions User TimeLine
+ * @apiName User TimeLine
+ * @apiGroup User
+ * 
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key
+ * 
+ * @apiSuccess (Success 200) {String} message Success message
+ * @apiSuccess (Success 200) {Json} data User action on activity
+ * 
+ * @apiError (Error 4xx) {String} message Validation or error message
+ */
+router.get('/actions', function (req, res, next) {
+    Bot.find({user_id: req.userInfo.id})
+            .populate('activity_id', null, 'activities')
+            .exec(function (err, botData) {
+                if (err) {
+                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in finding Bot"});
+                }
+                if (botData.length != 0) {
+                    res.status(config.OK_STATUS).json({message:"User actions successfully fetched",data: botData});
+                } else {
+                    res.status(config.NOT_FOUND).json({message: "User actions not found"});
+                }
+            });
 });
 
 /* Update User details */

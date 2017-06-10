@@ -253,6 +253,7 @@ router.get('/details', function (req, res, next) {
     }
 });
 
+
 /**
  * @api {Delete} /activity Delete Activity - READY
  * @apiName Delete Activity
@@ -290,6 +291,8 @@ router.delete('/', function (req, res, next) {
         });
     }
 });
+
+
 
 /**
  * @api {POST} /activity/actions Activity action
@@ -343,7 +346,7 @@ router.post('/actions', function (req, res, next) {
                     });
                 }
             });
-        }else{
+        } else {
             res.status(config.BAD_REQUEST).json({message: "You must need to send isPinned or action paramiter at a time"});
         }
     } else {
