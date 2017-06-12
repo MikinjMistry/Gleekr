@@ -80,12 +80,12 @@ router.post('/', function (req, res, next) {
         },
         'startDate': {
             notEmpty: true,
-			isDate : {
-				errorMessage: "Enter valid date"
+			isDate: {
+				errorMessage: "Enter valid start date"
 			},
-			matches : {
+			matches: {
 				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
-				errorMessage: "Enter valid date (mm/dd/yyyy)"
+				errorMessage: "Enter valid start date (mm/dd/yyyy)"
 			},
             errorMessage: "start date is required"
         },
@@ -93,16 +93,40 @@ router.post('/', function (req, res, next) {
             notEmpty: true,
 			matches : {
 				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
-				errorMessage: "Enter valid date (mm/dd/yyyy)"
+				errorMessage: "Enter valid start time (hh:mm am/AM/pm/PM)"
 			},
             errorMessage: "start time is required"
         },
         'location': {
             notEmpty: true,
             errorMessage: "location is required"
-        }
+        },
+		'endDate': {
+			isDate : {
+				errorMessage: "Enter valid end date"
+			},
+			matches : {
+				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
+				errorMessage: "Enter valid end date (mm/dd/yyyy)"
+			}
+		},
+		'endTime': {
+			matches : {
+				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
+				errorMessage: "Enter valid end time (hh:mm am/AM/pm/PM)"
+			}
+        },
     };
     req.checkBody(schema);
+	
+	if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate')) {
+		req.checkBody('startDate','Start date must be less then end date').startBefore(req.body.endDate);
+	}
+	
+	if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
+		req.checkBody('startDate','Start date must be less then end date').startBefore(req.body.endDate);
+	}
+	
     var errors = req.validationErrors();
     if (!errors) {
 
@@ -112,7 +136,7 @@ router.post('/', function (req, res, next) {
             json.startTime = moment(json.startTime, 'HH:mm');
         }
         if (json.hasOwnProperty('endTime')) {
-            json.endTime = moment(json.startTime, 'HH:mm');
+            json.endTime = moment(json.endTime, 'HH:mm');
         }
 
         json.user_id = req.userInfo.id;
