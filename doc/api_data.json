@@ -2,8 +2,8 @@
   {
     "type": "POST",
     "url": "/activity/actions",
-    "title": "Activity action",
-    "name": "Activity_action",
+    "title": "Add or update activity action",
+    "name": "Add_or_update_activity_action",
     "group": "Activity",
     "parameter": {
       "fields": {
@@ -12,7 +12,7 @@
             "group": "Parameter",
             "type": "String",
             "optional": false,
-            "field": "id",
+            "field": "activity_id",
             "description": "<p>Activity id</p>"
           },
           {
@@ -129,6 +129,62 @@
             "optional": false,
             "field": "message",
             "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/activities.js",
+    "groupTitle": "Activity"
+  },
+  {
+    "type": "get",
+    "url": "/activity",
+    "title": "Get all activity",
+    "name": "Get_All_activity",
+    "group": "Activity",
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Json",
+            "optional": false,
+            "field": "data",
+            "description": "<p>Activity details</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message</p>"
           }
         ]
       }

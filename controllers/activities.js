@@ -13,19 +13,30 @@ var path = require('path');
 var async = require('async');
 var _ = require('underscore');
 
-/* GET activity listing. */
+/**
+ * @api {get} /activity Get all activity 
+ * @apiName Get All activity
+ * @apiGroup Activity
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key
+ * 
+ * @apiSuccess (Success 200) {String} message Success message
+ * @apiSuccess (Success 200) {Json} data Activity details
+ * 
+ * @apiError (Error 4xx) {String} message Validation or error message
+ */
 router.get('/', function (req, res, next) {
     async.parallel({
         others: function (callback) {
             User.find({_id: req.userInfo.id})
-            .select('activities')
-            .populate('activities.activity_id', null, 'activities')
-            .exec(function (err, data) {
-                if (err) {
-                    callback('Error in fetching decliened activity', null);
-                }
-                callback(null, data);
-            });
+                    .select('activities')
+                    .populate('activities.activity_id', null, 'activities')
+                    .exec(function (err, data) {
+                        if (err) {
+                            callback('Error in fetching decliened activity', null);
+                        }
+                        callback(null, data);
+                    });
         },
         createdByMe: function (callback) {
             Activity.find({user_id: req.userInfo.id}, function (err, data) {
@@ -41,11 +52,22 @@ router.get('/', function (req, res, next) {
         }
         var json = {};
         json.createdByMe = results.createdByMe;
-        if(results.others.length != 0){
+        if (results.others.length != 0) {
             var activities = results.others[0].activities;
-            
+            var going = _.pluck(_.where(activities, {action: "going"}), 'activity_id');
+            var declined = _.pluck(_.where(activities, {action: 'not_interested'}), 'activity_id');
+            var pinned = _.pluck(_.where(activities, {isPinned: true}), 'activity_id');
+
+            json.going = going;
+            json.declined = declined;
+            json.pinned = pinned;
+            res.status(config.OK_STATUS).json({message: "Data is fetching successfully", data: json});
+        } else {
+            json.going = [];
+            json.declined = [];
+            json.pinned = [];
+            res.status(config.OK_STATUS).json({message: "Data is fetching successfully", data: json});
         }
-        res.status(config.OK_STATUS).json({message: "Data is fetching data", data: results});
     });
 });
 
@@ -80,21 +102,21 @@ router.post('/', function (req, res, next) {
         },
         'startDate': {
             notEmpty: true,
-			isDate : {
-				errorMessage: "Enter valid date"
-			},
-			matches : {
-				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
-				errorMessage: "Enter valid date (mm/dd/yyyy)"
-			},
+            isDate: {
+                errorMessage: "Enter valid date"
+            },
+            matches: {
+                options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/, 'i'],
+                errorMessage: "Enter valid date (mm/dd/yyyy)"
+            },
             errorMessage: "start date is required"
         },
         'startTime': {
             notEmpty: true,
-			matches : {
-				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
-				errorMessage: "Enter valid date (mm/dd/yyyy)"
-			},
+            matches: {
+                options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/, 'i'],
+                errorMessage: "Enter valid date (mm/dd/yyyy)"
+            },
             errorMessage: "start time is required"
         },
         'location': {
@@ -305,8 +327,8 @@ router.delete('/', function (req, res, next) {
 
 
 /**
- * @api {POST} /activity/actions Activity action
- * @apiName Activity action
+ * @api {POST} /activity/actions Add or update activity action
+ * @apiName Add or update activity action
  * @apiGroup Activity
  * 
  * @apiParam {String} activity_id Activity id 
