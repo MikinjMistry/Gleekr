@@ -11,22 +11,41 @@ var moment = require('moment');
 var fs = require('fs');
 var path = require('path');
 var async = require('async');
+var _ = require('underscore');
 
 /* GET activity listing. */
 router.get('/', function (req, res, next) {
-    Activity.find({'user_id': req.userInfo.id}, function (err, activities) {
-        if (err) {
-            result = {
-                message: "Error in get all activities"
-            };
-            res.status(config.DATABASE_ERROR_STATUS).json(result);
-        } else {
-
-            result = {
-                data: activities
-            }
-            res.status(config.OK_STATUS).json(result);
+    async.parallel({
+        others: function (callback) {
+            User.find({_id: req.userInfo.id})
+            .select('activities')
+            .populate('activities.activity_id', null, 'activities')
+            .exec(function (err, data) {
+                if (err) {
+                    callback('Error in fetching decliened activity', null);
+                }
+                callback(null, data);
+            });
+        },
+        createdByMe: function (callback) {
+            Activity.find({user_id: req.userInfo.id}, function (err, data) {
+                if (err) {
+                    callback('Error in fetching My activity', null);
+                }
+                callback(null, data);
+            });
         }
+    }, function (err, results) {
+        if (err) {
+            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in feching activity data"});
+        }
+        var json = {};
+        json.createdByMe = results.createdByMe;
+        if(results.others.length != 0){
+            var activities = results.others[0].activities;
+            
+        }
+        res.status(config.OK_STATUS).json({message: "Data is fetching data", data: results});
     });
 });
 
