@@ -146,7 +146,7 @@ router.post('/', function (req, res, next) {
 	}
 	
 	if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
-		req.checkBody('startDate','Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime,req.body.endDate,endTime);
+		req.checkBody('startDate','Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime,req.body.endDate,req.body.endTime);
 	}
 	
     var errors = req.validationErrors();
