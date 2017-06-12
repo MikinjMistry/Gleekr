@@ -61,10 +61,21 @@ router.post('/', function (req, res, next) {
         },
         'startDate': {
             notEmpty: true,
+			isDate : {
+				errorMessage: "Enter valid date"
+			},
+			matches : {
+				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
+				errorMessage: "Enter valid date (mm/dd/yyyy)"
+			},
             errorMessage: "start date is required"
         },
         'startTime': {
             notEmpty: true,
+			matches : {
+				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
+				errorMessage: "Enter valid date (mm/dd/yyyy)"
+			},
             errorMessage: "start time is required"
         },
         'location': {
