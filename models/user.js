@@ -6,7 +6,7 @@ var Schema = mongoose.Schema;
 
 var ActivitiesSchema = new Schema({
     activity_id: mongoose.Schema.Types.ObjectId,
-    action: { type: String, enum: ["invited", "going", "not_interested"] },
+    action: { type: String, enum: ["invited", "going", "not_interested"], default: "invited" },
     isPinned: Boolean,
     pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to activity.chat_messages _id
     createdAt: { type: Date, default: Date.now },

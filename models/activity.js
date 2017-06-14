@@ -27,6 +27,7 @@ var ActivitySchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     chatMessages: [ActivityChatSchema] //Embedding ActivityChatSchema into Activity
+	pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to activity.chat_messages _id
 }, { versionKey: false });
 
 // Compile model from schema
