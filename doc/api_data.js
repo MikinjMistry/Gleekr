@@ -77,7 +77,7 @@ define({ "api": [
   },
   {
     "type": "Delete",
-    "url": "/activity",
+    "url": "/activity?id=:id",
     "title": "Delete Activity - READY",
     "name": "Delete_Activity",
     "group": "Activity",
@@ -140,7 +140,7 @@ define({ "api": [
   {
     "type": "get",
     "url": "/activity",
-    "title": "Get all activity",
+    "title": "Get all activity - READY",
     "name": "Get_All_activity",
     "group": "Activity",
     "header": {
@@ -161,17 +161,45 @@ define({ "api": [
         "Success 200": [
           {
             "group": "Success 200",
-            "type": "String",
+            "type": "Array",
             "optional": false,
-            "field": "message",
-            "description": "<p>Success message</p>"
+            "field": "new",
+            "description": "<p>Array of new activities</p>"
           },
           {
             "group": "Success 200",
-            "type": "Json",
+            "type": "Array",
             "optional": false,
-            "field": "data",
-            "description": "<p>Activity details</p>"
+            "field": "upcoming",
+            "description": "<p>Array of upcoming activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "going",
+            "description": "<p>Array of im_going activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "createdByMe",
+            "description": "<p>Array of created by me activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "pinned",
+            "description": "<p>Array of pinned activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "notInterested",
+            "description": "<p>Array of not interested activities</p>"
           }
         ]
       }
@@ -291,28 +319,28 @@ define({ "api": [
             "type": "Date",
             "optional": false,
             "field": "startDate",
-            "description": "<p>form-data: Activity start date</p>"
+            "description": "<p>form-data: Activity start date, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startTime",
-            "description": "<p>form-data: Activity start time</p>"
+            "description": "<p>form-data: Activity start time, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": true,
             "field": "endDate",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end date, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": true,
             "field": "endTime",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end time, format: ISO date</p>"
           },
           {
             "group": "Parameter",
@@ -353,7 +381,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "x-access-token",
-            "description": "<p>Users unique access-key.</p>"
+            "description": "<p>Users unique access-key</p>"
           }
         ]
       }
@@ -366,14 +394,14 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Success message.</p>"
+            "description": "<p>Success message</p>"
           },
           {
             "group": "Success 200",
             "type": "Object",
             "optional": false,
             "field": "activity",
-            "description": "<p>If activity successfully inserted.</p>"
+            "description": "<p>If activity successfully created</p>"
           }
         ]
       }
@@ -386,7 +414,7 @@ define({ "api": [
             "type": "String",
             "optional": false,
             "field": "message",
-            "description": "<p>Validation or error message.</p>"
+            "description": "<p>Validation or error message</p>"
           }
         ]
       }
@@ -431,28 +459,28 @@ define({ "api": [
             "type": "Date",
             "optional": false,
             "field": "startDate",
-            "description": "<p>form-data: Activity start date</p>"
+            "description": "<p>form-data: Activity start date, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "startTime",
-            "description": "<p>form-data: Activity start time</p>"
+            "description": "<p>form-data: Activity start time, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "endDate",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end date, format: ISO date</p>"
           },
           {
             "group": "Parameter",
             "type": "Date",
             "optional": false,
             "field": "endTime",
-            "description": "<p>form-data: Activity end time</p>"
+            "description": "<p>form-data: Activity end time, format: ISO date</p>"
           },
           {
             "group": "Parameter",

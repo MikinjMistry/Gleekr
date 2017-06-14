@@ -14,32 +14,36 @@ var async = require('async');
 var _ = require('underscore');
 
 /**
- * @api {get} /activity Get all activity 
+ * @api {get} /activity Get all activity - READY
  * @apiName Get All activity
  * @apiGroup Activity
  * 
  * @apiHeader {String}  x-access-token Users unique access-key
  * 
- * @apiSuccess (Success 200) {String} message Success message
- * @apiSuccess (Success 200) {Json} data Activity details
+ * @apiSuccess (Success 200) {Array} new Array of new activities
+ * @apiSuccess (Success 200) {Array} upcoming Array of upcoming activities
+ * @apiSuccess (Success 200) {Array} going Array of im_going activities
+ * @apiSuccess (Success 200) {Array} createdByMe Array of created by me activities
+ * @apiSuccess (Success 200) {Array} pinned Array of pinned activities
+ * @apiSuccess (Success 200) {Array} notInterested Array of not interested activities
  * 
  * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/', function (req, res, next) {
     async.parallel({
         others: function (callback) {
-            User.find({_id: req.userInfo.id})
-                    .select('activities')
-                    .populate('activities.activity_id', null, 'activities')
-                    .exec(function (err, data) {
-                        if (err) {
-                            callback('Error in fetching decliened activity', null);
-                        }
-                        callback(null, data);
-                    });
+            User.find({ _id: req.userInfo.id })
+                .select('activities')
+                .populate('activities.activity_id', null, 'activities')
+                .exec(function (err, data) {
+                    if (err) {
+                        callback('Error in fetching activities', null);
+                    }
+                    callback(null, data);
+                });
         },
         createdByMe: function (callback) {
-            Activity.find({user_id: req.userInfo.id}, function (err, data) {
+            Activity.find({ user_id: req.userInfo.id, isDeleted: { $ne: true } }, function (err, data) {
                 if (err) {
                     callback('Error in fetching My activity', null);
                 }
@@ -48,26 +52,26 @@ router.get('/', function (req, res, next) {
         }
     }, function (err, results) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in feching activity data"});
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in feching activity data" });
         }
-        var json = {};
-        json.createdByMe = results.createdByMe;
+        var responseData = {
+            new: [],
+            upcoming: [],
+            going: [],
+            createdByMe: (results.createdByMe && results.createdByMe.length > 0) ? results.createdByMe : [],
+            pinned: [],
+            notInterested: []
+        };
+
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
-            var going = _.pluck(_.where(activities, {action: "going"}), 'activity_id');
-            var declined = _.pluck(_.where(activities, {action: 'not_interested'}), 'activity_id');
-            var pinned = _.pluck(_.where(activities, {isPinned: true}), 'activity_id');
 
-            json.going = going;
-            json.declined = declined;
-            json.pinned = pinned;
-            res.status(config.OK_STATUS).json({message: "Data is fetching successfully", data: json});
-        } else {
-            json.going = [];
-            json.declined = [];
-            json.pinned = [];
-            res.status(config.OK_STATUS).json({message: "Data is fetching successfully", data: json});
+            responseData.going = _.pluck(_.where(activities, { action: "going" }), 'activity_id') || [];
+            responseData.notInterested = _.pluck(_.where(activities, { action: 'not_interested' }), 'activity_id') || [];
+            responseData.pinned = _.pluck(_.where(activities, { isPinned: true }), 'activity_id') || [];
         }
+
+        res.status(config.OK_STATUS).json(responseData);
     });
 });
 
@@ -79,20 +83,20 @@ router.get('/', function (req, res, next) {
  * 
  * @apiParam {file} [file] form-data: file object for image [jpg,png]
  * @apiParam {String} name  form-data: Activity name
- * @apiParam {Date} startDate form-data: Activity start date 
- * @apiParam {Date} startTime form-data: Activity start time
- * @apiParam {Date} [endDate] form-data: Activity end time
- * @apiParam {Date} [endTime] form-data: Activity end time
+ * @apiParam {Date} startDate form-data: Activity start date, format: ISO date
+ * @apiParam {Date} startTime form-data: Activity start time, format: ISO date
+ * @apiParam {Date} [endDate] form-data: Activity end date, format: ISO date
+ * @apiParam {Date} [endTime] form-data: Activity end time, format: ISO date
  * @apiParam {String} location form-data: Activity location
  * @apiParam {String} [description] form-data: Activity description
  * @apiParam {Number} [noOfParticipants] form-data: Number of participants
  * @apiParam {Decimal} [costPerPerson] form-data: cost per person
  * 
- * @apiHeader {String}  x-access-token Users unique access-key.
+ * @apiHeader {String}  x-access-token Users unique access-key
  * 
- * @apiSuccess (Success 200) {String} message Success message.
- * @apiSuccess (Success 200) {Object} activity If activity successfully inserted.
- * @apiError (Error 4xx) {String} message Validation or error message.
+ * @apiSuccess (Success 200) {String} message Success message
+ * @apiSuccess (Success 200) {Object} activity If activity successfully created
+ * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.post('/', function (req, res, next) {
     var schema = {
@@ -102,53 +106,27 @@ router.post('/', function (req, res, next) {
         },
         'startDate': {
             notEmpty: true,
-			isDate: {
-				errorMessage: "Enter valid start date"
-			},
-			matches: {
-				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
-				errorMessage: "Enter valid start date (mm/dd/yyyy)"
-			},
             errorMessage: "start date is required"
         },
         'startTime': {
             notEmpty: true,
-			matches : {
-				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
-				errorMessage: "Enter valid start time (hh:mm am/AM/pm/PM)"
-			},
             errorMessage: "start time is required"
         },
         'location': {
             notEmpty: true,
             errorMessage: "location is required"
-        },
-		'endDate': {
-			isDate : {
-				errorMessage: "Enter valid end date"
-			},
-			matches : {
-				options: [/^[0-1][0-9]\/[0-9]{2}\/[0-9]{4}$/,'i'],
-				errorMessage: "Enter valid end date (mm/dd/yyyy)"
-			}
-		},
-		'endTime': {
-			matches : {
-				options: [/(0[1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|([1-9]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))|(1[0-2]:[0-5][0-9]((\ ){0,1})((AM)|(PM)|(am)|(pm)))/,'i'],
-				errorMessage: "Enter valid end time (hh:mm am/AM/pm/PM)"
-			}
-        },
+        }
     };
     req.checkBody(schema);
-	
-	if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate')) {
-		req.checkBody('startDate','Start date must be less then end date').startBefore(req.body.endDate);
-	}
-	
-	if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
-		req.checkBody('startDate','Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime,req.body.endDate,req.body.endTime);
-	}
-	
+
+    if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate')) {
+        req.checkBody('startDate', 'Start date must be less then end date').startBefore(req.body.endDate);
+    }
+
+    if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
+        req.checkBody('startDate', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime, req.body.endDate, req.body.endTime);
+    }
+
     var errors = req.validationErrors();
     if (!errors) {
 
@@ -174,14 +152,14 @@ router.post('/', function (req, res, next) {
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-                        res.status(config.MEDIA_ERROR_STATUS).json({message: "Error in activity image upload"});
+                        res.status(config.MEDIA_ERROR_STATUS).json({ message: "Error in uploading activity image" });
                     } else {
                         json.photo = "/upload/activity/" + filename;
                         insertActivity(json, req, res)
                     }
                 });
             } else {
-                res.status(config.MEDIA_ERROR_STATUS).json({message: "This File format is not allowed"});
+                res.status(config.MEDIA_ERROR_STATUS).json({ message: "File format not allowed" });
             }
         } else {
             // insert activity
@@ -204,10 +182,10 @@ router.post('/', function (req, res, next) {
  * @apiParam {String} id form-data: activity id that is going to update
  * @apiParam {file} file form-data: file object for image [jpg,png]
  * @apiParam {String} name  form-data: Activity name
- * @apiParam {Date} startDate form-data: Activity start date 
- * @apiParam {Date} startTime form-data: Activity start time
- * @apiParam {Date} endDate form-data: Activity end time
- * @apiParam {Date} endTime form-data: Activity end time
+ * @apiParam {Date} startDate form-data: Activity start date, format: ISO date
+ * @apiParam {Date} startTime form-data: Activity start time, format: ISO date
+ * @apiParam {Date} endDate form-data: Activity end date, format: ISO date
+ * @apiParam {Date} endTime form-data: Activity end time, format: ISO date
  * @apiParam {String} location form-data: Activity location
  * @apiParam {String} description form-data: Activity description
  * @apiParam {Number} noOfParticipants form-data: Number of participants
@@ -227,6 +205,15 @@ router.put('/', function (req, res, next) {
         }
     };
     req.checkBody(schema);
+
+    if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate')) {
+        req.checkBody('startDate', 'Start date must be less then end date').startBefore(req.body.endDate);
+    }
+
+    if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
+        req.checkBody('startDate', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime, req.body.endDate, req.body.endTime);
+    }
+
     var errors = req.validationErrors();
     if (!errors) {
         var json = req.body;
@@ -241,7 +228,7 @@ router.put('/', function (req, res, next) {
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in activity image upload"});
+                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in activity image upload" });
                     } else {
                         data = {};
                         if (req.body) {
@@ -252,7 +239,7 @@ router.put('/', function (req, res, next) {
                     }
                 });
             } else {
-                res.status(config.MEDIA_ERROR_STATUS).json({message: "This File format is not allowed"});
+                res.status(config.MEDIA_ERROR_STATUS).json({ message: "This File format is not allowed" });
             }
         } else {
             data = req.body;
@@ -290,15 +277,15 @@ router.get('/details', function (req, res, next) {
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Activity.findOne({_id: req.query.id, isDeleted: {$ne: true}}, function (err, activityData) {
+        Activity.findOne({ _id: req.query.id, isDeleted: { $ne: true } }, function (err, activityData) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({message: "Activity not found"});
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity not found" });
             }
 
             if (activityData) {
                 res.status(config.OK_STATUS).json(activityData);
             } else {
-                res.status(config.NOT_FOUND).json({message: "Activity not found"});
+                res.status(config.NOT_FOUND).json({ message: "Activity not found" });
             }
 
         });
@@ -312,7 +299,7 @@ router.get('/details', function (req, res, next) {
 
 
 /**
- * @api {Delete} /activity Delete Activity - READY
+ * @api {Delete} /activity?id=:id Delete Activity - READY
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
@@ -333,12 +320,12 @@ router.delete('/', function (req, res, next) {
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        var json = {'isDeleted': true};
-        Activity.update({_id: {$eq: req.query.id}}, {$set: json}, function (err, response) {
+        var json = { 'isDeleted': true };
+        Activity.update({ _id: { $eq: req.query.id } }, { $set: json }, function (err, response) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({message: "Activity could not be deleted"});
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity could not be deleted" });
             } else {
-                res.status(config.OK_STATUS).json({message: "Activity deleted successfully"});
+                res.status(config.OK_STATUS).json({ message: "Activity deleted successfully" });
             }
         });
     } else {
@@ -376,35 +363,35 @@ router.post('/actions', function (req, res, next) {
     var errors = req.validationErrors();
     if (!errors) {
         if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
-            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
+            User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                 }
                 if (userData) {
-                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
-                        $set: {"activities.$": req.body}
+                    User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
+                        $set: { "activities.$": req.body }
                     }, function (err, data) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in updating user activity"});
+                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
                         }
                         userActivityAction(req, res);
                     });
                 } else {
-                    User.findOneAndUpdate({_id: req.userInfo.id}, {
-                        $push: {activities: req.body}
+                    User.findOneAndUpdate({ _id: req.userInfo.id }, {
+                        $push: { activities: req.body }
                     }, function (err, data) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                         }
                         userActivityAction(req, res);
                     });
                 }
             });
         } else {
-            res.status(config.BAD_REQUEST).json({message: "You need to send either isPinned or action parameter"});
+            res.status(config.BAD_REQUEST).json({ message: "You need to send either isPinned or action parameter" });
         }
     } else {
-        res.status(config.BAD_REQUEST).json({message: "Validation error", error: errors});
+        res.status(config.BAD_REQUEST).json({ message: "Validation error", error: errors });
     }
 });
 
@@ -420,9 +407,9 @@ function userActivityAction(req, res) {
                     'actionType': action
                 }, function (err, result) {
                     if (err) {
-                        callback({message: err.message}, null);
+                        callback({ message: err.message }, null);
                     }
-                    callback(null, {message: "Activity is " + action + " successfully"});
+                    callback(null, { message: "Activity is " + action + " successfully" });
                 });
             },
             action: function (callback) {
@@ -432,16 +419,16 @@ function userActivityAction(req, res) {
                     'actionType': req.body.action
                 }, function (err, result) {
                     if (err) {
-                        callback({message: err.message}, null);
+                        callback({ message: err.message }, null);
                     }
-                    callback(null, {message: "Activity action is updated successfully"});
+                    callback(null, { message: "Activity action is updated successfully" });
                 });
             }
         }, function (err, results) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({message: 'Error in adding activity status'});
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: 'Error in adding activity status' });
             }
-            res.status(config.OK_STATUS).json({message: "Activity action is updated successfully"});
+            res.status(config.OK_STATUS).json({ message: "Activity action is updated successfully" });
         });
     } else {
         if (req.body.hasOwnProperty('isPinned')) {
@@ -452,9 +439,9 @@ function userActivityAction(req, res) {
                 'actionType': action
             }, function (err, result) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: err.message});
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: err.message });
                 }
-                res.status(config.OK_STATUS).json({message: "Activity is " + action + " successfully"});
+                res.status(config.OK_STATUS).json({ message: "Activity is " + action + " successfully" });
             });
         } else if (req.body.hasOwnProperty('action')) {
             bothelper.add({
@@ -463,25 +450,26 @@ function userActivityAction(req, res) {
                 'actionType': req.body.action
             }, function (err, result) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: err.message});
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: err.message });
                 }
-                res.status(config.OK_STATUS).json({message: "Activity action is updated successfully"});
+                res.status(config.OK_STATUS).json({ message: "Activity action is updated successfully" });
             });
         }
     }
 }
 
 function updateActivity(id, data, req, res) {
-    Activity.update({_id: {$eq: id}}, {$set: data}, function (err, response) {
+    Activity.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
+        console.log(data);
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured while creating activity"});
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity" });
         } else {
             bothelper.add({
                 'user_id': req.userInfo.id,
                 'activity_id': id,
                 'actionType': 'update'
-            }, function (err, result) {});
-            res.status(config.OK_STATUS).json({message: "Activity updated successfully"});
+            }, function (err, result) { });
+            res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
         }
     });
 }
@@ -490,30 +478,30 @@ function insertActivity(objData, req, res) {
     var activityObject = new Activity(objData);
     activityObject.save(function (err, acitivityData) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error occured in creating activity"});
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
         } else {
             // Add action in bot
             bothelper.add({
                 'user_id': req.userInfo.id,
                 'activity_id': acitivityData._id,
                 'actionType': 'create'
-            }, function (err, result) {});
+            }, function (err, result) { });
 
             //Set user's deault acitivity action to going
-            User.findOneAndUpdate({_id: req.userInfo.id}, {
-                $push: {activities: {'activity_id': acitivityData._id, 'action': 'going'}}
+            User.findOneAndUpdate({ _id: req.userInfo.id }, {
+                $push: { activities: { 'activity_id': acitivityData._id, 'action': 'going' } }
             }, function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                 }
                 bothelper.add({
                     'user_id': req.userInfo.id,
                     'activity_id': acitivityData._id,
                     'actionType': 'going'
-                }, function (err, result) {});
+                }, function (err, result) { });
             });
 
-            res.status(config.OK_STATUS).json({message: "Activity created successfully", activity: acitivityData});
+            res.status(config.OK_STATUS).json({ message: "Activity created successfully", activity: acitivityData });
         }
     });
 }
