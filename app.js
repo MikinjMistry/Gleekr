@@ -6,7 +6,12 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('./config');
 var db = require('./models/db');
+<<<<<<< HEAD
 var moscaServer = require('./mqtt/mqttBroker');
+=======
+var moment = require('moment');
+//var moscaServer = require('./mqtt/mqttBroker');
+>>>>>>> 48ffccee655515156c061e0705f14237644a06c6
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -22,7 +27,17 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(expressValidator());
+// Custom validation
+app.use(expressValidator({
+ customValidators: {
+    startBefore: function(startDate, endDate) {
+        return moment(startDate).isSameOrBefore(endDate);
+    },
+	startDateTimeBefore: function(startDate, startTime, endDate, endTime) {
+        return moment(startDate+' '+startTime).isSameOrBefore(endDate+' '+endTime);
+    }
+ }
+}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'doc')));
 app.use('/upload',express.static(path.join(__dirname, 'upload')));
@@ -60,6 +75,8 @@ app.use(function (err, req, res, next) {
     error: {}
   });
 });
+
+
 
 app.listen((config.node_port || 3000), function () {
   console.log('Listening on port ' + (config.node_port || 3000) + '...');
