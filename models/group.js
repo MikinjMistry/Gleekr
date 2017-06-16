@@ -24,7 +24,7 @@ var GroupSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     members: [MemberSchema], //Embedding MemberSchema into group
-    chatMessages: [GroupChatSchema] //Embedding GroupChatSchema into group for chat messages
+    chatMessages: [GroupChatSchema], //Embedding GroupChatSchema into group for chat messages
 	pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to GroupChatSchema.chat_messages _id
 }, { versionKey: false });
 
