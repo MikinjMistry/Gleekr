@@ -34,7 +34,8 @@ router.get('/', function (req, res, next) {
         others: function (callback) {
             User.find({ _id: req.userInfo.id })
                 .select('activities')
-                .populate('activities.activity_id', null, 'activities')
+                //.populate('activities.activity_id', null, 'activities')
+				.populate({path : 'activities.activity_id', model : 'activities', match : {isDeleted:{$ne : true}}})
                 .exec(function (err, data) {
                     if (err) {
                         callback('Error in fetching activities', null);
@@ -49,7 +50,8 @@ router.get('/', function (req, res, next) {
                 }
                 callback(null, data);
             });
-        },
+        }
+		/*,
         previousSevenDay:function(callback){
             var previousDate = moment().subtract(7, 'days').format("YYYY-MM-DD");
             Activity.find({ isDeleted: { $ne: true },startDate:{
@@ -61,7 +63,7 @@ router.get('/', function (req, res, next) {
                 }
                 callback(null, data);
             });
-        }
+        }*/
     }, function (err, results) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in feching activity data" });
@@ -76,15 +78,16 @@ router.get('/', function (req, res, next) {
         };
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
-            var invited = _.where(_.pluck(_.where(activities, { action: "invited" }), 'activity_id'),{"isDeleted": false}) || [];
-            responseData.new = _.uniq(_.collect(_.union(results.previousSevenDay,responseData.createdByMe,invited),function(obj){
+
+            var invited = _.pluck(_.where(activities, { action: "invited" }), 'activity_id') || [];
+
+            /*responseData.new = _.uniq(_.collect(_.union(results.previousSevenDay,responseData.createdByMe,invited),function(obj){
                 return JSON.stringify(obj);
-            }));
-            responseData.going = _.where(_.pluck(_.where(activities, { action: "going" }), 'activity_id'),{"isDeleted": false}) || [];
-            responseData.notInterested = _.where(_.pluck(_.where(activities, { action: 'not_interested'}), 'activity_id'),{"isDeleted": false}) || [];
-            responseData.pinned = _.where(_.pluck(_.where(activities, { isPinned: true}), 'activity_id'),{"isDeleted": false}) || [];
-            
-            
+            }));*/
+			
+            responseData.going = _.pluck(_.where(activities, { action: "going" }), 'activity_id') || [];
+            responseData.notInterested = _.pluck(_.where(activities, { action: 'not_interested'}), 'activity_id') || [];
+            responseData.pinned = _.pluck(_.where(activities, { isPinned: true}), 'activity_id') || [];
         }
         res.status(config.OK_STATUS).json(responseData);
     });
