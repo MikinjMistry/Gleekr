@@ -49,6 +49,18 @@ router.get('/', function (req, res, next) {
                 }
                 callback(null, data);
             });
+        },
+        previousSevenDay:function(callback){
+            var previousDate = moment().subtract(7, 'days').format("YYYY-MM-DD");
+            Activity.find({ isDeleted: { $ne: true },startDate:{
+                    $gte:previousDate,
+                    $lte:new Date()
+                }}, function (err, data) {
+                if (err) {
+                    callback('Error in fetching previousSevenDay activity', null);
+                }
+                callback(null, data);
+            });
         }
     }, function (err, results) {
         if (err) {
@@ -62,15 +74,18 @@ router.get('/', function (req, res, next) {
             pinned: [],
             notInterested: []
         };
-
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
-
-            responseData.going = _.pluck(_.where(activities, { action: "going" }), 'activity_id') || [];
-            responseData.notInterested = _.pluck(_.where(activities, { action: 'not_interested' }), 'activity_id') || [];
-            responseData.pinned = _.pluck(_.where(activities, { isPinned: true }), 'activity_id') || [];
+            var invited = _.where(_.pluck(_.where(activities, { action: "invited" }), 'activity_id'),{"isDeleted": false}) || [];
+            responseData.new = _.uniq(_.collect(_.union(results.previousSevenDay,responseData.createdByMe,invited),function(obj){
+                return JSON.stringify(obj);
+            }));
+            responseData.going = _.where(_.pluck(_.where(activities, { action: "going" }), 'activity_id'),{"isDeleted": false}) || [];
+            responseData.notInterested = _.where(_.pluck(_.where(activities, { action: 'not_interested'}), 'activity_id'),{"isDeleted": false}) || [];
+            responseData.pinned = _.where(_.pluck(_.where(activities, { isPinned: true}), 'activity_id'),{"isDeleted": false}) || [];
+            
+            
         }
-
         res.status(config.OK_STATUS).json(responseData);
     });
 });

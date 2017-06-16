@@ -7,9 +7,9 @@ var Schema = mongoose.Schema;
 var ActivityChatSchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
     message: String,
-    mimeType: { type: String, enum: ["text", "video", "image", "audio"] },
-    createdAt: { type: Date, default: Date.now }
-}, { versionKey: false });
+    mimeType: {type: String, enum: ["text", "video", "image", "audio"]},
+    createdAt: {type: Date, default: Date.now}
+}, {versionKey: false});
 
 var ActivitySchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
@@ -23,12 +23,12 @@ var ActivitySchema = new Schema({
     description: String,
     noOfParticipants: Number,
     costPerPerson: Number,
-    isDeleted: { type : Boolean, default : false },
-    createdAt: { type: Date, default: Date.now },
-    modifiedAt: { type: Date, default: Date.now },
+    isDeleted: {type: Boolean, default: false},
+    createdAt: {type: Date, default: Date.now},
+    modifiedAt: {type: Date, default: Date.now},
     chatMessages: [ActivityChatSchema], //Embedding ActivityChatSchema into Activity
-	pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to activity.chat_messages _id
-}, { versionKey: false });
+    pinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to activity.chat_messages _id
+}, {versionKey: false});
 
 // Compile model from schema
 var Activity = mongoose.model('activities', ActivitySchema, 'activities');
