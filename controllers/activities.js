@@ -15,7 +15,7 @@ var async = require('async');
 var _ = require('underscore');
 
 /**
- * @api {get} /activity Get all activity - READY
+ * @api {get} /activity Get all activity - IN PROGRESS
  * @apiName Get All activity
  * @apiGroup Activity
  * 
@@ -405,7 +405,7 @@ router.delete('/', function (req, res, next) {
  * @apiName Add or update activity action
  * @apiGroup Activity
  * 
- * @apiParam {String} activity_id Activity id 
+ * @apiParam {String} id Activity id 
  * @apiParam {Boolean} isPinned Activity user pin status [true,false] 
  * @apiParam {String} action Activity user action status ["invited", "going", "not_interested"]
  * 
@@ -417,7 +417,7 @@ router.delete('/', function (req, res, next) {
  */
 router.post('/actions', function (req, res, next) {
     var schema = {
-        'activity_id': {
+        'id': {
             notEmpty: true,
             errorMessage: "Activity id is required."
         }
@@ -426,12 +426,12 @@ router.post('/actions', function (req, res, next) {
     var errors = req.validationErrors();
     if (!errors) {
         if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
-            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
+            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.id}, function (err, userData) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
                 }
                 if (userData) {
-                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
+                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.id}, {
                         $set: {"activities.$": req.body}
                     }, function (err, data) {
                         if (err) {
@@ -472,7 +472,7 @@ function userActivityAction(req, res) {
                     if (err) {
                         callback({message: err.message}, null);
                     }
-                    callback(null, {message: "Activity is " + action + " successfully"});
+                    callback(null, {message: "Activity action updated successfully"});
                 });
             },
             action: function (callback) {
@@ -484,14 +484,14 @@ function userActivityAction(req, res) {
                     if (err) {
                         callback({message: err.message}, null);
                     }
-                    callback(null, {message: "Activity action is updated successfully"});
+                    callback(null, {message: "Activity action updated successfully"});
                 });
             }
         }, function (err, results) {
             if (err) {
                 res.status(config.DATABASE_ERROR_STATUS).json({message: 'Error in adding activity status'});
             }
-            res.status(config.OK_STATUS).json({message: "Activity action is updated successfully"});
+            res.status(config.OK_STATUS).json({message: "Activity action updated successfully"});
         });
     } else {
         if (req.body.hasOwnProperty('isPinned')) {
@@ -504,7 +504,7 @@ function userActivityAction(req, res) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: err.message});
                 }
-                res.status(config.OK_STATUS).json({message: "Activity is " + action + " successfully"});
+                res.status(config.OK_STATUS).json({message: "Activity action updated successfully"});
             });
         } else if (req.body.hasOwnProperty('action')) {
             bothelper.add({
@@ -515,7 +515,7 @@ function userActivityAction(req, res) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: err.message});
                 }
-                res.status(config.OK_STATUS).json({message: "Activity action is updated successfully"});
+                res.status(config.OK_STATUS).json({message: "Activity action updated successfully"});
             });
         }
     }

@@ -6,9 +6,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('./config');
 var db = require('./models/db');
-
 var moment = require('moment');
-var moscaServer = require('./mqtt/mqttBroker');
+//var moscaServer = require('./mqtt/mqttBroker');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -26,18 +25,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 // Custom validation
 app.use(expressValidator({
- customValidators: {
-    startBefore: function(startDate, endDate) {
-        return moment(startDate).isSameOrBefore(endDate);
+  customValidators: {
+    startBefore: function (startDate, endDate) {
+      return moment(startDate).isSameOrBefore(endDate);
     },
-	startDateTimeBefore: function(startDate, startTime, endDate, endTime) {
-        return moment(startDate+' '+startTime).isSameOrBefore(endDate+' '+endTime);
+    startDateTimeBefore: function (startTime, endTime) {
+      return moment(startTime).isBefore(endTime);
     }
- }
+  }
 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'doc')));
-app.use('/upload',express.static(path.join(__dirname, 'upload')));
+app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 // Use routes and methods from controllers
 app.use(require('./controllers'));
