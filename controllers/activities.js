@@ -78,40 +78,58 @@ router.get('/', function (req, res, next) {
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
             var previousDate = new Date(moment().subtract(7, 'days').format("YYYY-MM-DD")).getTime();
+            var nextTwoDate = new Date(moment().add(2, 'days').format("YYYY-MM-DD HH:mm")).getTime();
+            var currentDate = new Date().getTime();
             var invited = [];
-            _.each(activities,function(obj){
-                if(obj.action == 'invited' && obj.activity_id){
+            _.each(activities, function (obj) {
+                if (obj.action == 'invited' && obj.activity_id) {
                     invited.push(obj.activity_id);
                 }
             });
-            var newActivity = _.union(invited,results.createdByMe);
-            responseData.abc = newActivity;
-            _.each(newActivity,function(obj){
+            var newActivity = _.union(invited, results.createdByMe);
+            _.each(newActivity, function (obj) {
                 var activityDate = new Date(obj.startDate).getTime();
-                var currentDate = new Date().getTime();
-                if(activityDate >= previousDate && activityDate <= currentDate){
-                    console.log("==>",jsonhelper.isExist(responseData.new,obj._id));
-                   var flag = jsonhelper.isExist(responseData.new,obj._id);
-                   if(!flag){
+                if (activityDate >= previousDate && activityDate <= currentDate) {
+                    var flag = jsonhelper.isExist(responseData.new, obj._id);
+                    if (!flag) {
                         responseData.new.push(obj);
                     }
                 }
             });
             //going
-            _.each(activities,function(obj){
-                if(obj.action == 'going' && obj.activity_id){
+            _.each(activities, function (obj) {
+                if (obj.action == 'going' && obj.activity_id) {
                     responseData.going.push(obj.activity_id);
                 }
             });
+            //upcoming
+            _.each(responseData.going, function (obj) {
+                var activityDate = new Date(obj.startDate);
+                var day = activityDate.getDate();
+                var month = activityDate.getMonth();
+                var year = activityDate.getFullYear();
+                var activityTime = new Date(obj.startTime);
+                var hours = activityTime.getHours();
+                var minute = activityTime.getMinutes();
+                var activityDateTime = new Date(year,month,day,hours,minute,0).getTime();
+                
+                var currentDate = new Date().getTime();
+                if (activityDateTime <= nextTwoDate && activityDateTime > currentDate) {
+                    var flag = jsonhelper.isExist(responseData.upcoming, obj._id);
+                    if (!flag) {
+                        responseData.upcoming.push(obj);
+                    }
+                }
+            });
             //Not Intrested
-            _.each(activities,function(obj){
-                if(obj.action == 'not_interested' && obj.activity_id){
+            _.each(activities, function (obj) {
+                if (obj.action == 'not_interested' && obj.activity_id) {
                     responseData.notInterested.push(obj.activity_id);
                 }
             });
             //pinned
-            _.each(activities,function(obj){
-                if(obj.isPinned && obj.activity_id){
+            _.each(activities, function (obj) {
+                if (obj.isPinned && obj.activity_id) {
                     responseData.pinned.push(obj.activity_id);
                 }
             });
