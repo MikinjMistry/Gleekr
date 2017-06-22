@@ -413,13 +413,17 @@ router.post('/actions', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
+        req.body.activity_id = req.body.id; 
+        delete req.body.id;
         if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
-            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.id}, function (err, userData) {
+            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
                 }
+                console.log("user:",userData);
                 if (userData) {
-                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.id}, {
+                    console.log("body:",req.body);
+                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
                         $set: {"activities.$": req.body}
                     }, function (err, data) {
                         if (err) {

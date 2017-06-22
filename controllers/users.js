@@ -481,7 +481,7 @@ router.get('/actions', function (req, res, next) {
                         var momentObj = moment(b.createdAt);
                         return momentObj.format('YYYY-MM-DD'); // 2016-07-15
                     });
-                    res.status(config.OK_STATUS).json({message: "User actions successfully fetched", data: botData});
+                    res.status(config.OK_STATUS).json(botData);
                 } else {
                     res.status(config.NOT_FOUND).json({message: "User actions not found"});
                 }

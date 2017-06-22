@@ -27,9 +27,15 @@ app.use(bodyParser.json());
 app.use(expressValidator({
   customValidators: {
     startBefore: function (startDate, endDate) {
+      startDate = moment(startDate);  
+      endDate = moment(endDate);
       return moment(startDate).isSameOrBefore(endDate);
     },
-    startDateTimeBefore: function (startTime, endTime) {
+    startDateTimeBefore: function (startDate,startTime, endDate,endTime) {
+      startTime = moment(startDate+" "+startTime);  
+      endTime = moment(endDate+" "+endTime);
+      console.log("startTime",startTime);
+      console.log("endTime",endTime);
       return moment(startTime).isBefore(endTime);
     }
   }
