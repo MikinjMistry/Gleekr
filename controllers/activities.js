@@ -83,7 +83,7 @@ router.get('/', function (req, res, next) {
             });
 
             //going
-            responseData.going = _.filter(activities, function (activity) { return activity.action === "going" && activity.activity_id; });
+            responseData.going = _.pluck(_.filter(activities, function (activity) { return activity.action === "going" && activity.activity_id; }),'activity_id');
 
             //upcoming
             _.each(responseData.going, function (obj) {
@@ -106,10 +106,10 @@ router.get('/', function (req, res, next) {
             });
 
             //Not Intrested
-            responseData.notInterested = _.filter(activities, function (activity) { return activity.action === "not_interested" && activity.activity_id; });
+            responseData.notInterested = _.pluck(_.filter(activities, function (activity) { return activity.action === "not_interested" && activity.activity_id; }),'activity_id');
 
             //pinned
-            responseData.pinned = _.filter(activities, function (activity) { return activity.isPinned && activity.activity_id; });
+            responseData.pinned = _.pluck(_.filter(activities, function (activity) { return activity.isPinned && activity.activity_id; }),'activity_id');
 
         }
         res.status(config.OK_STATUS).json(responseData);

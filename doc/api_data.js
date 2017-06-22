@@ -2,7 +2,7 @@ define({ "api": [
   {
     "type": "POST",
     "url": "/activity/actions",
-    "title": "Add or update activity action",
+    "title": "Add or update activity action - IN PROGRESS",
     "name": "Add_or_update_activity_action",
     "group": "Activity",
     "parameter": {
@@ -12,7 +12,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "String",
             "optional": false,
-            "field": "activity_id",
+            "field": "id",
             "description": "<p>Activity id</p>"
           },
           {
@@ -829,7 +829,7 @@ define({ "api": [
   {
     "type": "get",
     "url": "/user/actions",
-    "title": "User TimeLine",
+    "title": "User TimeLine - IN PROGRESS",
     "name": "User_TimeLine",
     "group": "User",
     "header": {
@@ -1197,6 +1197,34 @@ define({ "api": [
             "optional": false,
             "field": "companyName",
             "description": "<p>form-data:company name</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "address",
+            "description": "<p>form-data:address</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "city",
+            "description": "<p>form-data:city</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "state",
+            "description": "<p>form-data:state</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "country",
+            "description": "<p>form-data:country</p>"
           },
           {
             "group": "Parameter",
