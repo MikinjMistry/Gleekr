@@ -50,18 +50,6 @@ router.get('/', function (req, res, next) {
                 }
                 callback(null, data);
             });
-        },
-        previousSevenDay: function (callback) {
-            var previousDate = moment().subtract(7, 'days').format("YYYY-MM-DD");
-            Activity.find({isDeleted: {$ne: true}, startDate: {
-                    $gte: previousDate,
-                    $lte: new Date()
-                }}, function (err, data) {
-                if (err) {
-                    callback('Error in fetching previousSevenDay activity', null);
-                }
-                callback(null, data);
-            });
         }
     }, function (err, results) {
         if (err) {
