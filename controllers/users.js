@@ -27,6 +27,10 @@ var jwt = require('jsonwebtoken');
  * @apiParam {String} email  form-data: user email
  * @apiParam {String} jobTitle form-data: job title 
  * @apiParam {String} companyName form-data:company name
+ * @apiParam {String} address form-data:address
+ * @apiParam {String} city form-data:city
+ * @apiParam {String} state form-data:state
+ * @apiParam {String} country form-data:country
  * @apiParam {file} file form-data: file object [jpg,png]
  *  
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -457,7 +461,7 @@ router.post('/sync_contacts', function (req, res, next) {
 });
 
 /**
- * @api {get} /user/actions User TimeLine
+ * @api {get} /user/actions User TimeLine - IN PROGRESS
  * @apiName User TimeLine
  * @apiGroup User
  * 
