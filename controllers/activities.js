@@ -66,7 +66,7 @@ router.get('/', function (req, res, next) {
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
             var previousDate = new Date(moment().subtract(7, 'days').format("YYYY-MM-DD")).getTime();
-            var nextTwoDate = new Date(moment().add(2, 'days').format("YYYY-MM-DD HH:mm")).getTime();
+            var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
             var invited = _.filter(activities, function (activity) { return activity.action === "invited" && activity.activity_id; });
 
@@ -381,11 +381,12 @@ router.delete('/', function (req, res, next) {
 /**
  * @api {POST} /activity/actions Add or update activity action - IN PROGRESS
  * @apiName Add or update activity action
+ * @apiDescription isPinned and action should be passed alternately depending on the action which needs to be done for the activity id passed.
  * @apiGroup Activity
  * 
  * @apiParam {String} id Activity id 
- * @apiParam {Boolean} isPinned Activity user pin status [true,false] 
- * @apiParam {String} action Activity user action status ["invited", "going", "not_interested"]
+ * @apiParam {Boolean} [isPinned] Activity user pin status [true,false] 
+ * @apiParam {String} [action] Activity user action status ["invited", "going", "not_interested"]
  * 
  * @apiHeader {String}  x-access-token Users unique access-key
  * 

@@ -4,6 +4,7 @@
     "url": "/activity/actions",
     "title": "Add or update activity action - IN PROGRESS",
     "name": "Add_or_update_activity_action",
+    "description": "<p>isPinned and action should be passed alternately depending on the action which needs to be done for the activity id passed.</p>",
     "group": "Activity",
     "parameter": {
       "fields": {
@@ -18,14 +19,14 @@
           {
             "group": "Parameter",
             "type": "Boolean",
-            "optional": false,
+            "optional": true,
             "field": "isPinned",
             "description": "<p>Activity user pin status [true,false]</p>"
           },
           {
             "group": "Parameter",
             "type": "String",
-            "optional": false,
+            "optional": true,
             "field": "action",
             "description": "<p>Activity user action status [&quot;invited&quot;, &quot;going&quot;, &quot;not_interested&quot;]</p>"
           }
