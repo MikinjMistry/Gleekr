@@ -27,16 +27,14 @@ app.use(bodyParser.json());
 app.use(expressValidator({
   customValidators: {
     startBefore: function (startDate, endDate) {
-      startDate = moment(startDate);  
+      startDate = moment(startDate);
       endDate = moment(endDate);
       return moment(startDate).isSameOrBefore(endDate);
     },
-    startDateTimeBefore: function (startDate,startTime, endDate,endTime) {
-      startTime = moment(startDate+" "+startTime);  
-      endTime = moment(endDate+" "+endTime);
-      console.log("startTime",startTime);
-      console.log("endTime",endTime);
-      return moment(startTime).isBefore(endTime);
+    startDateTimeBefore: function (startDateTime, endDateTime) {
+      startDate = moment(startDateTime);
+      endDate = moment(endDateTime);
+      return moment(startDateTime).isBefore(endDateTime);
     }
   }
 }));
@@ -80,7 +78,7 @@ app.use(function (err, req, res, next) {
 
 
 
-app.listen((config.node_port || 3000), function () {
+app.listen((config.node_port || 3000), function () {  
   console.log('Listening on port ' + (config.node_port || 3000) + '...');
 })
 

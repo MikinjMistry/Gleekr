@@ -3,6 +3,11 @@ var config = require('../config');
 module.exports = function (req, res, next) {
     //need to by pass auth verification for OTP related calls
 
+    console.log("=================================================================");
+    console.log("Request Headers", req.headers);
+    console.log("-----------------------------------------------------------------");
+    console.log("Request Body", req.body);
+    console.log("-----------------------------------------------------------------");
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
     if (token) {
         jwt.verify(token, config.ACCESS_TOKEN_SECRET_KEY, function (err, decoded) {
