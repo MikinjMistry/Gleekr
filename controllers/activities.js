@@ -507,12 +507,20 @@ function updateActivity(id, data, req, res) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity" });
         } else {
-            bothelper.add({
-                'user_id': req.userInfo.id,
-                'activity_id': id,
-                'actionType': 'update'
-            }, function (err, result) { });
-            res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
+			console.log("update activity = ",response);
+			if(response.nModified == 1)
+			{
+				bothelper.add({
+					'user_id': req.userInfo.id,
+					'activity_id': id,
+					'actionType': 'update'
+				}, function (err, result) { });
+				res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
+			}
+			else
+			{
+				res.status(config.NOT_FOUND).json({ message: "Invalid acitivity id" });
+			}
         }
     });
 }
