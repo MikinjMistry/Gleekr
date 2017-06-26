@@ -83,7 +83,7 @@ router.get('/', function (req, res, next) {
             });
 
             //going
-            responseData.going = _.pluck(_.filter(activities, function (activity) { return activity.action === "going" && activity.activity_id; }),'activity_id');
+            responseData.going = _.pluck(_.filter(activities, function (activity) { return activity.action === "going" && activity.activity_id; }), 'activity_id');
 
             //upcoming
             _.each(responseData.going, function (obj) {
@@ -106,10 +106,10 @@ router.get('/', function (req, res, next) {
             });
 
             //Not Intrested
-            responseData.notInterested = _.pluck(_.filter(activities, function (activity) { return activity.action === "not_interested" && activity.activity_id; }),'activity_id');
+            responseData.notInterested = _.pluck(_.filter(activities, function (activity) { return activity.action === "not_interested" && activity.activity_id; }), 'activity_id');
 
             //pinned
-            responseData.pinned = _.pluck(_.filter(activities, function (activity) { return activity.isPinned && activity.activity_id; }),'activity_id');
+            responseData.pinned = _.pluck(_.filter(activities, function (activity) { return activity.isPinned && activity.activity_id; }), 'activity_id');
 
         }
         res.status(config.OK_STATUS).json(responseData);
@@ -165,7 +165,7 @@ router.post('/', function (req, res, next) {
     }
 
     if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
-        req.checkBody('startDate', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime, req.body.endDate, req.body.endTime);
+        req.checkBody('startTime', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.endTime);
     }
 
     var errors = req.validationErrors();
@@ -252,7 +252,7 @@ router.put('/', function (req, res, next) {
     }
 
     if (req.body.hasOwnProperty('startDate') && req.body.hasOwnProperty('endDate') && req.body.hasOwnProperty('startTime') && req.body.hasOwnProperty('endTime')) {
-        req.checkBody('startDate', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.startTime, req.body.endDate, req.body.endTime);
+        req.checkBody('startTime', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.endTime);
     }
 
     var errors = req.validationErrors();
@@ -404,16 +404,16 @@ router.post('/actions', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        req.body.activity_id = req.body.id; 
+        req.body.activity_id = req.body.id;
         delete req.body.id;
         if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
-            User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
+            User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
                 if (err) {
                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                 }
                 if (userData) {
-                    User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
-                        $set: {"activities.$": req.body}
+                    User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
+                        $set: { "activities.$": req.body }
                     }, function (err, data) {
                         if (err) {
                             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
