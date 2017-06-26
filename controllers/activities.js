@@ -507,8 +507,7 @@ function updateActivity(id, data, req, res) {
         if (err) {
             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity" });
         } else {
-			console.log("update activity = ",response);
-			if(response.nModified == 1)
+			if(response.n == 1)
 			{
 				bothelper.add({
 					'user_id': req.userInfo.id,
