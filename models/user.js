@@ -20,6 +20,10 @@ var UserSchema = new Schema({
     image: String,
     jobTitle: String,
     companyName: String,
+    address: String,
+    city: String,
+    state: String,
+    country: String,
     isDeleted: Boolean,
     refreshToken: String,
     groupPinnedItems: [mongoose.Schema.Types.ObjectId], //Array of _id referring to group.chat_messages _id

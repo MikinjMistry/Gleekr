@@ -1,7 +1,7 @@
 var mqtt = require("mqtt");
 var config = require('../config');
-// var url = 'mqtt://'+config.HOST+':1883';
-var url = 'mqtt://test.mosquitto.org';
+var url = 'mqtt://'+config.HOST+':1883';
+// var url = 'mqtt://test.mosquitto.org';
 var client = mqtt.connect(url);
 /*** client on connect ***/
 client.on("connect", function() {
