@@ -25,7 +25,7 @@
     "node_enable_d8": "false",
     "node_enable_v8_vtunejit": "false",
     "node_install_npm": "true",
-    "node_module_version": 48,
+    "node_module_version": 51,
     "node_no_browser_globals": "false",
     "node_prefix": "/usr/local",
     "node_release_urlbase": "https://nodejs.org/download/release/",
@@ -45,8 +45,8 @@
     "node_use_v8_platform": "true",
     "openssl_fips": "",
     "openssl_no_asm": 0,
-    "shlib_suffix": "so.48",
-    "target_arch": "ia32",
+    "shlib_suffix": "so.51",
+    "target_arch": "x64",
     "v8_enable_gdbjit": 0,
     "v8_enable_i18n_support": 1,
     "v8_inspector": "true",
@@ -54,9 +54,9 @@
     "v8_optimized_debug": 0,
     "v8_random_seed": 0,
     "v8_use_snapshot": "true",
-    "want_separate_host_toolset": 1,
-    "nodedir": "C:\\Users\\Siddharth\\.node-gyp\\6.10.0",
-    "copy_dev_lib": "true",
+    "want_separate_host_toolset": 0,
+    "want_separate_host_toolset_mkpeephole": 0,
+    "nodedir": "C:\\Users\\Mikinj\\.node-gyp\\7.6.0",
     "standalone_static_library": 1
   }
 }
