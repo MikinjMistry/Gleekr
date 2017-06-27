@@ -504,7 +504,7 @@ router.post('/actions', function (req, res, next) {
                 if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
                     User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action"});
                         }
                         if (userData) {
                             var setJSON = {};
@@ -527,7 +527,7 @@ router.post('/actions', function (req, res, next) {
                                 $push: {activities: req.body}
                             }, function (err, data) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action"});
                                 }
                                 userActivityAction(req, res);
                             });
@@ -553,7 +553,7 @@ router.post('/actions', function (req, res, next) {
  * @apiGroup Activity
  * 
  * @apiParam {String} id Chat item id 
- * @apiParam {Boolean} [isPinned] Pin status [true,false] 
+ * @apiParam {Boolean} isPinned Pin status [true,false] 
  * 
  * @apiHeader {String}  x-access-token Users unique access-key
  * 
@@ -574,53 +574,28 @@ router.post('/chat_actions', function (req, res, next) {
         if (req.body.hasOwnProperty('isPinned')) {
 			Activity.findOne({"chatMessages._id": req.body.id},function(err, acitivityData){
 				if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in performing action", err: err });
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in performing action"});
                 } else {
 					if(acitivityData) {
-						Activity.findOneAndUpdate({ _id: acitivityData._id }, {
-							$push: { pinnedItems: req.body.id }
-						}, function (err, data) {
-							if (err) {
-								res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding chat item action", err: err });
-							}
-						});
+						
+						if(req.body.isPinned == true || req.body.isPinned == "true" )
+						{
+							Activity.findOneAndUpdate({ _id: acitivityData._id }, {
+								$push: { pinnedItems: req.body.id }
+							}, function (err, data) { });
+							
+							// Insert into user's activity collection
+						}
+						else
+						{
+							// Remove from collection
+						}
 					} else {
 						res.status(config.NOT_FOUND).json({ message: "Invalid chat id" });
 					}
 				}
 			});
-			
-            User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
-                if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
-                }
-                if (userData) {
-                    var setJSON = {};
-                    if(req.body.hasOwnProperty('isPinned')){
-                        setJSON["activities.$.isPinned"] = req.body.isPinned;
-                    }
-                    if(req.body.hasOwnProperty('action')){
-                        setJSON["activities.$.action"] = req.body.action;   
-                    }
-                    User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
-                        $set: setJSON
-                    }, function (err, data) {
-                        if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
-                        }
-                        userActivityAction(req, res);
-                    });
-                } else {
-                    User.findOneAndUpdate({ _id: req.userInfo.id }, {
-                        $push: { activities: req.body }
-                    }, function (err, data) {
-                        if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
-                        }
-                        userActivityAction(req, res);
-                    });
-                }
-            });
+		
         } else {
             res.status(config.BAD_REQUEST).json({ message: "You need to send either isPinned or action parameter" });
         }
@@ -710,7 +685,7 @@ function updateActivity(id, data, req, res) {
 					} }
 				}, function (err, data) {
 					if (err) {
-						res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
+						res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action" });
 					}
 				});
 				
@@ -741,7 +716,7 @@ function insertActivity(objData, req, res) {
                 $push: {activities: {'activity_id': acitivityData._id, 'action': 'going'}}
             }, function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action"});
                 }
                 bothelper.add({
                     'user_id': req.userInfo.id,
