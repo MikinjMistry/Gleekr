@@ -255,6 +255,14 @@ router.put('/', function (req, res, next) {
         req.checkBody('startTime', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.endTime);
     }
 
+        if (req.body.hasOwnProperty('startTime')) {
+            req.body.startTime = moment(req.body.startTime, 'HH:mm');
+        }
+        if (req.body.hasOwnProperty('endTime')) {
+            req.body.endTime = moment(req.body.endTime, 'HH:mm');
+        }
+
+
     var errors = req.validationErrors();
     if (!errors) {
         var json = req.body;
@@ -505,7 +513,7 @@ function userActivityAction(req, res) {
 function updateActivity(id, data, req, res) {
     Activity.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity" });
+            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity",err:err });
         } else {
 			if(response.n == 1)
 			{
