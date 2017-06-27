@@ -65,7 +65,7 @@ router.get('/', function (req, res, next) {
         };
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
-            var previousDate = new Date(moment().subtract(7, 'days').format("YYYY-MM-DD")).getTime();
+            var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
             var invited = _.filter(activities, function (activity) { return activity.action === "invited" && activity.activity_id; });
@@ -73,8 +73,9 @@ router.get('/', function (req, res, next) {
             //new
             var newActivity = _.union(invited, results.createdByMe);
             _.each(newActivity, function (obj) {
-                var activityDate = new Date(obj.startDate).getTime();
-                if (activityDate >= previousDate && activityDate <= currentDate) {
+                var createdDate = new Date(obj.createdAt).getTime();
+                var modifiedDate = new Date(obj.modifiedAt).getTime();
+                if ((createdDate >= previousDate && createdDate <= currentDate) || (modifiedDate >= previousDate && modifiedDate <= currentDate)) {
                     var flag = jsonhelper.isExist(responseData.new, obj._id);
                     if (!flag) {
                         responseData.new.push(obj);
@@ -420,8 +421,15 @@ router.post('/actions', function (req, res, next) {
                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                 }
                 if (userData) {
+                    var setJSON = {};
+                    if(req.body.hasOwnProperty('isPinned')){
+                        setJSON["activities.$.isPinned"] = req.body.isPinned;
+                    }
+                    if(req.body.hasOwnProperty('action')){
+                        setJSON["activities.$.action"] = req.body.action;   
+                    }
                     User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
-                        $set: { "activities.$": req.body }
+                        $set: setJSON
                     }, function (err, data) {
                         if (err) {
                             res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
@@ -513,21 +521,19 @@ function userActivityAction(req, res) {
 function updateActivity(id, data, req, res) {
     Activity.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured while updating activity",err:err });
+            res.status(config.BAD_REQUEST).json({ message: "Invalid activity id" });
         } else {
-			if(response.n == 1)
-			{
-				bothelper.add({
-					'user_id': req.userInfo.id,
-					'activity_id': id,
-					'actionType': 'update'
-				}, function (err, result) { });
-				res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
-			}
-			else
-			{
-				res.status(config.NOT_FOUND).json({ message: "Invalid acitivity id" });
-			}
+            if (response.n == 1) {
+                bothelper.add({
+                    'user_id': req.userInfo.id,
+                    'activity_id': id,
+                    'actionType': 'update'
+                }, function (err, result) { });
+                res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
+            }
+            else {
+                res.status(config.NOT_FOUND).json({ message: "Invalid acitivity id" });
+            }
         }
     });
 }
