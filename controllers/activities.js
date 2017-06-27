@@ -456,6 +456,88 @@ router.post('/actions', function (req, res, next) {
 });
 
 
+/**
+ * @api {POST} /activity/chat_actions pin/unpin chat item of activity
+ * @apiName pin or unpin activity chat action
+ * @apiGroup Activity
+ * 
+ * @apiParam {String} id Chat item id 
+ * @apiParam {Boolean} [isPinned] Pin status [true,false] 
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key
+ * 
+ * @apiSuccess (Success 200) {String} message Success message
+ * 
+ * @apiError (Error 4xx) {String} message Validation or error message
+ */
+router.post('/chat_actions', function (req, res, next) {
+    var schema = {
+        'id': {
+            notEmpty: true,
+            errorMessage: "Chat item id is required."
+        }
+    };
+    req.checkBody(schema);
+    var errors = req.validationErrors();
+    if (!errors) {
+        if (req.body.hasOwnProperty('isPinned')) {
+			Activity.findOne({"chatMessages._id": req.body.id},function(err, acitivityData){
+				if (err) {
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in performing action", err: err });
+                } else {
+					if(acitivityData) {
+						Activity.findOneAndUpdate({ _id: acitivityData._id }, {
+							$push: { pinnedItems: req.body.id }
+						}, function (err, data) {
+							if (err) {
+								res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding chat item action", err: err });
+							}
+						});
+					} else {
+						res.status(config.NOT_FOUND).json({ message: "Invalid chat id" });
+					}
+				}
+			});
+			
+            User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
+                if (err) {
+                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
+                }
+                if (userData) {
+                    var setJSON = {};
+                    if(req.body.hasOwnProperty('isPinned')){
+                        setJSON["activities.$.isPinned"] = req.body.isPinned;
+                    }
+                    if(req.body.hasOwnProperty('action')){
+                        setJSON["activities.$.action"] = req.body.action;   
+                    }
+                    User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
+                        $set: setJSON
+                    }, function (err, data) {
+                        if (err) {
+                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
+                        }
+                        userActivityAction(req, res);
+                    });
+                } else {
+                    User.findOneAndUpdate({ _id: req.userInfo.id }, {
+                        $push: { activities: req.body }
+                    }, function (err, data) {
+                        if (err) {
+                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
+                        }
+                        userActivityAction(req, res);
+                    });
+                }
+            });
+        } else {
+            res.status(config.BAD_REQUEST).json({ message: "You need to send either isPinned or action parameter" });
+        }
+    } else {
+        res.status(config.BAD_REQUEST).json({ message: "Validation error", error: errors });
+    }
+});
+
 function userActivityAction(req, res) {
     if (req.body.hasOwnProperty('isPinned') && req.body.hasOwnProperty('action')) {
         var action = (req.body.isPinned == true) || (req.body.isPinned == "true") ? "pin" : "unpin";
@@ -540,7 +622,6 @@ function updateActivity(id, data, req, res) {
 					if (err) {
 						res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
 					}
-					userActivityAction(req, res);
 				});
 				
                 res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
