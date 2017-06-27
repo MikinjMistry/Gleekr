@@ -450,7 +450,7 @@ router.post('/actions', function (req, res, next) {
 
 function userActivityAction(req, res) {
     if (req.body.hasOwnProperty('isPinned') && req.body.hasOwnProperty('action')) {
-        var action = req.body.isPinned ? "pin" : "unpin";
+        var action = (req.body.isPinned == true) || (req.body.isPinned == "true") ? "pin" : "unpin";
         async.parallel({
             pin: function (callback) {
                 bothelper.add({
@@ -484,7 +484,7 @@ function userActivityAction(req, res) {
         });
     } else {
         if (req.body.hasOwnProperty('isPinned')) {
-            var action = req.body.isPinned ? "pin" : "unpin";
+            var action = (req.body.isPinned == true) || (req.body.isPinned == "true") ? "pin" : "unpin";
             bothelper.add({
                 'user_id': req.userInfo.id,
                 'activity_id': req.body.activity_id,
@@ -521,6 +521,20 @@ function updateActivity(id, data, req, res) {
                     'activity_id': id,
                     'actionType': 'update'
                 }, function (err, result) { });
+				
+				Activity.findOneAndUpdate({ _id: id }, {
+					$push: { chatMessages: {
+						user_id: req.userInfo.id, 
+						message: "Activity details have changed",
+						mimeType: "notification"
+					} }
+				}, function (err, data) {
+					if (err) {
+						res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
+					}
+					userActivityAction(req, res);
+				});
+				
                 res.status(config.OK_STATUS).json({ message: "Activity updated successfully" });
             }
             else {
