@@ -413,10 +413,11 @@ router.post('/actions', function (req, res, next) {
                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
                 }
                 if (userData) {
-                    var setJSON = {}
+                    var setJSON = {};
                     if(req.body.hasOwnProperty('isPinned')){
                         setJSON["activities.$.isPinned"] = req.body.isPinned;
-                    }else if(req.body.hasOwnProperty('action')){
+                    }
+                    if(req.body.hasOwnProperty('action')){
                         setJSON["activities.$.action"] = req.body.action;   
                     }
                     User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
