@@ -577,18 +577,31 @@ router.post('/chat_actions', function (req, res, next) {
                     res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in performing action"});
                 } else {
 					if(acitivityData) {
-						
 						if(req.body.isPinned == true || req.body.isPinned == "true" )
 						{
+							// Insert into activity collection
 							Activity.findOneAndUpdate({ _id: acitivityData._id }, {
 								$push: { pinnedItems: req.body.id }
 							}, function (err, data) { });
 							
 							// Insert into user's activity collection
+							User.findOneAndUpdate({_id:req.userInfo.id,"activities.activity_id": acitivityData._id},{
+								$push:{"activities.$.pinnedItems": req.body.id}
+							}, function (err, data) { });
+							res.status(config.OK_STATUS).json({message: "Chat item has pinned successfully"});
 						}
 						else
 						{
-							// Remove from collection
+							// Remove from activity collection
+							Activity.findOneAndUpdate({ _id: acitivityData._id }, {
+								$pull: { pinnedItems: req.body.id }
+							}, function (err, data) { });
+							
+							// Remove from user's collection
+							User.findOneAndUpdate({"activities.activity_id": acitivityData._id},{
+								$pull:{"activities.$.pinnedItems": req.body.id}
+							}, function (err, data) { });
+							res.status(config.OK_STATUS).json({message: "Chat item has unpinned successfully"});
 						}
 					} else {
 						res.status(config.NOT_FOUND).json({ message: "Invalid chat id" });
