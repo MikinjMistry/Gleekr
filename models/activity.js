@@ -7,7 +7,7 @@ var Schema = mongoose.Schema;
 var ActivityChatSchema = new Schema({
     user_id: mongoose.Schema.Types.ObjectId,
     message: String,
-    mimeType: {type: String, enum: ["text", "video", "image", "audio"]},
+    mimeType: {type: String, enum: ["text", "video", "image", "audio","notification"]},
     createdAt: {type: Date, default: Date.now}
 }, {versionKey: false});
 
