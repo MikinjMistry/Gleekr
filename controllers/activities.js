@@ -407,41 +407,48 @@ router.post('/actions', function (req, res, next) {
     if (!errors) {
         req.body.activity_id = req.body.id;
         delete req.body.id;
-        if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
-            User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
-                if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
-                }
-                if (userData) {
-                    var setJSON = {};
-                    if(req.body.hasOwnProperty('isPinned')){
-                        setJSON["activities.$.isPinned"] = req.body.isPinned;
-                    }
-                    if(req.body.hasOwnProperty('action')){
-                        setJSON["activities.$.action"] = req.body.action;   
-                    }
-                    User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, {
-                        $set: setJSON
-                    }, function (err, data) {
+        Activity.findOne({ _id: req.body.activity_id}, function (err, activityData) {
+            if(activityData){
+                if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
+                    User.findOne({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, function (err, userData) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
+                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
                         }
-                        userActivityAction(req, res);
+                        if (userData) {
+                            var setJSON = {};
+                            if (req.body.hasOwnProperty('isPinned')) {
+                                setJSON["activities.$.isPinned"] = req.body.isPinned;
+                            }
+                            if (req.body.hasOwnProperty('action')) {
+                                setJSON["activities.$.action"] = req.body.action;
+                            }
+                            User.findOneAndUpdate({_id: req.userInfo.id, "activities.activity_id": req.body.activity_id}, {
+                                $set: setJSON
+                            }, function (err, data) {
+                                if (err) {
+                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in updating user activity"});
+                                }
+                                userActivityAction(req, res);
+                            });
+                        } else {
+                            User.findOneAndUpdate({_id: req.userInfo.id}, {
+                                $push: {activities: req.body}
+                            }, function (err, data) {
+                                if (err) {
+                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in adding user activity action", err: err});
+                                }
+                                userActivityAction(req, res);
+                            });
+                        }
                     });
                 } else {
-                    User.findOneAndUpdate({ _id: req.userInfo.id }, {
-                        $push: { activities: req.body }
-                    }, function (err, data) {
-                        if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action", err: err });
-                        }
-                        userActivityAction(req, res);
-                    });
+                    res.status(config.BAD_REQUEST).json({message: "You need to send either isPinned or action parameter"});
                 }
-            });
-        } else {
-            res.status(config.BAD_REQUEST).json({ message: "You need to send either isPinned or action parameter" });
-        }
+            }else{
+                res.status(config.BAD_REQUEST).json({ message: "Activity is not exist"});
+            }
+            
+        });
     } else {
         res.status(config.BAD_REQUEST).json({ message: "Validation error", error: errors });
     }
