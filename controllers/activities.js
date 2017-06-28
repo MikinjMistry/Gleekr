@@ -256,6 +256,14 @@ router.put('/', function (req, res, next) {
         req.checkBody('startTime', 'Start date and time must be less then end date and time').startDateTimeBefore(req.body.endTime);
     }
 
+        if (req.body.hasOwnProperty('startTime')) {
+            req.body.startTime = moment(req.body.startTime, 'HH:mm');
+        }
+        if (req.body.hasOwnProperty('endTime')) {
+            req.body.endTime = moment(req.body.endTime, 'HH:mm');
+        }
+
+
     var errors = req.validationErrors();
     if (!errors) {
         var json = req.body;
