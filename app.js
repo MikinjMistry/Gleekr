@@ -8,7 +8,7 @@ var bodyParserJsonError = require('express-body-parser-json-error');
 var config = require('./config');
 var db = require('./models/db');
 var moment = require('moment');
- var moscaServer = require('./mqtt/mqttBroker');
+var moscaServer = require('./mqtt/mqttBroker');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
