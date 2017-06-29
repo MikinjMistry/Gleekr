@@ -4,10 +4,11 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var bodyParserJsonError = require('express-body-parser-json-error');
 var config = require('./config');
 var db = require('./models/db');
 var moment = require('moment');
- var moscaServer = require('./mqtt/mqttBroker');
+//  var moscaServer = require('./mqtt/mqttBroker');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -23,6 +24,8 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(bodyParserJsonError());
+
 // Custom validation
 app.use(expressValidator({
   customValidators: {
@@ -38,6 +41,7 @@ app.use(expressValidator({
     }
   }
 }));
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'doc')));
 app.use('/upload', express.static(path.join(__dirname, 'upload')));

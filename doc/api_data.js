@@ -2,8 +2,8 @@ define({ "api": [
   {
     "type": "POST",
     "url": "/activity/actions",
-    "title": "Add or update activity action - IN PROGRESS",
-    "name": "Add_or_update_activity_action",
+    "title": "Add/update activity action - READY",
+    "name": "Add_update_activity_action",
     "description": "<p>isPinned and action should be passed alternately depending on the action which needs to be done for the activity id passed.</p>",
     "group": "Activity",
     "parameter": {
@@ -201,6 +201,20 @@ define({ "api": [
             "optional": false,
             "field": "notInterested",
             "description": "<p>Array of not interested activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "archived",
+            "description": "<p>Array of archived activities</p>"
+          },
+          {
+            "group": "Success 200",
+            "type": "Array",
+            "optional": false,
+            "field": "all",
+            "description": "<p>Array of all activities</p>"
           }
         ]
       }
@@ -425,6 +439,75 @@ define({ "api": [
     "groupTitle": "Activity"
   },
   {
+    "type": "POST",
+    "url": "/activity/invites",
+    "title": "Send activity invites - READY",
+    "name": "Send_activity_invites",
+    "group": "Activity",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "activity_id",
+            "description": "<p>Activity id</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Array",
+            "optional": false,
+            "field": "users",
+            "description": "<p>Array of users id</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key.</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/activities.js",
+    "groupTitle": "Activity"
+  },
+  {
     "type": "put",
     "url": "/activity",
     "title": "Update Activity - READY",
@@ -549,6 +632,75 @@ define({ "api": [
             "optional": false,
             "field": "message",
             "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/activities.js",
+    "groupTitle": "Activity"
+  },
+  {
+    "type": "POST",
+    "url": "/activity/chat_actions",
+    "title": "Pin/Unpin chat item of activity",
+    "name": "pin_or_unpin_activity_chat_action",
+    "group": "Activity",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>Chat item id</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": false,
+            "field": "isPinned",
+            "description": "<p>Pin status [true,false]</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message</p>"
           }
         ]
       }
