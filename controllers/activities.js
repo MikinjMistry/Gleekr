@@ -345,16 +345,53 @@ router.get('/details', function (req, res, next) {
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Activity.findOne({ _id: req.query.id, isDeleted: { $ne: true } }, function (err, activityData) {
+        async.parallel({
+            total_invites_sent: function (callback) {
+                User.count({ 'activities.activity_id' : req.query.id}, function(err, data){
+                    if (err) 
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            total_invites_accepted: function (callback) {
+                User.count({ 'activities.activity_id' : req.query.id, 'activities.action' : 'going'}, function(err, data){
+                    if (err) 
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            total_invites_rejected: function (callback) {
+                User.count({ 'activities.activity_id' : req.query.id, 'activities.action' : 'not_interested'}, function(err, data){
+                    if (err) 
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            participants: function (callback) {
+                User.find({ 'activities.activity_id' : req.query.id, 'activities.action' : 'going'},{_id:1,mobileNo:1,name:1,image:1}, function(err, data){
+                    if (err) 
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            Activity: function (callback) {
+                Activity.findOne({ _id: req.query.id, isDeleted: { $ne: true } }, function (err, activityData) {
+                    if (err) {
+                        callback("Activity not found");
+                    }
+                    if (activityData) {
+                        callback(null, activityData);
+                    } 
+
+                });
+            },
+        }, function (err, results) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity not found" });
+                res.status(config.DATABASE_ERROR_STATUS).json({ message: err });
             }
-
-            if (activityData) {
-                res.status(config.OK_STATUS).json(activityData);
-            } 
-
+            res.status(config.OK_STATUS).json(results);
         });
+        
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error",
