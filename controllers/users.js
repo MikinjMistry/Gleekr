@@ -474,7 +474,6 @@ router.post('/sync_contacts', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/actions', function (req, res, next) {
-    console.log(req.query);
     var schema = {
         'start': {
             notEmpty: true,
@@ -494,7 +493,6 @@ router.get('/actions', function (req, res, next) {
                 .sort('-createdAt').skip(parseInt(req.query.start)).limit(parseInt(req.query.offset))
                 .exec(function (err, botData) {
                     if (err) {
-                        console.log(err);
                         res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in finding Bot"});
                     }
                     if (botData.length != 0) {
