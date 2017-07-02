@@ -9,6 +9,7 @@ var twiliohelper = require('../helpers/twilio');
 
 var User = require("../models/user");
 var Otp = require("../models/otp");
+var Activity = require("../models/activity");
 
 /* Include controllers to handle routes */
 var users = require('./users');

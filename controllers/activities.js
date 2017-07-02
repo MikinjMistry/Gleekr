@@ -358,28 +358,28 @@ router.get('/details', function (req, res, next) {
                 });
             },
             total_invites_sent: function (callback) {
-                User.count({ 'activities.activity_id': req.query.id, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({'activities': {"$elemMatch" : { 'activity_id' : req.query.id }}, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             total_invites_accepted: function (callback) {
-                User.count({ 'activities.activity_id': req.query.id, 'activities.action': 'going', _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({ 'activities': {"$elemMatch" : { 'activity_id' : req.query.id , 'action': { $eq : 'going' } } }, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             total_invites_rejected: function (callback) {
-                User.count({ 'activities.activity_id': req.query.id, 'activities.action': { $eq: 'not_interested' }, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({ 'activities': {"$elemMatch" : { 'activity_id' : req.query.id, 'action': { $eq: 'not_interested' } }}, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             participants: function (callback) {
-                User.find({ 'activities.activity_id': req.query.id, 'activities.action': 'going' }, { _id: 1, mobileNo: 1, name: 1, image: 1 }, function (err, data) {
+                User.find({ 'activities' : { "$elemMatch" : { 'activity_id': req.query.id, 'action': 'going' }}}, { _id: 1, mobileNo: 1, name: 1, image: 1 }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
