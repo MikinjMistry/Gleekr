@@ -25,6 +25,7 @@
     "mongodb": "^2.2.26",
     "mongoose": "^4.10.2",
     "morgan": "~1.6.1",
+    "mosca": "^2.5.1",
     "mqtt": "^2.8.2",
     "path": "^0.12.7",
     "serve-favicon": "~2.3.0",
