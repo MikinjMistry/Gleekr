@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
+var cron = require('node-cron');
 
 var Activity = require("../models/activity");
 var User = require("../models/user");
@@ -672,11 +673,23 @@ router.post('/chat_actions', function (req, res, next) {
     }
 });
 
+cron.schedule('* * 1-31 * *', function(){
+  console.log('running a task every day');
+  archiveActivity();
+});
+
 function archiveActivity()
 {
-	var today = moment;
-	Activity.findAndUpdate({isArchived: {$ne:false}, {endDate: {$lt : today}}},{$set:{isArchived:true}},function(err,response){
-		
+	var today = moment();
+	Activity.update( { isArchived: {$ne:true}, endDate: {$lt : today}}, {$set:{isArchived:true}}, function(err,response) {
+		if(err)
+		{
+			console.log("err in cron : ",err);
+		}
+		if(response)
+		{
+			console.log("cron executed");
+		}
 	});
 }
 
