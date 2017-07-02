@@ -8,7 +8,7 @@ var bodyParserJsonError = require('express-body-parser-json-error');
 var config = require('./config');
 var db = require('./models/db');
 var moment = require('moment');
-var moscaServer = require('./mqtt/mqttBroker');
+//var moscaServer = require('./mqtt/mqttBroker');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -63,9 +63,8 @@ app.use(function (req, res, next) {
 if (app.get('env') === 'development') {
   app.use(function (err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
+    res.json({
+      message: err.message
     });
   });
 }
@@ -74,15 +73,13 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
+  res.json({
+    message: err.message
   });
 });
 
 
-
-app.listen((config.node_port || 3000), function () {  
+app.listen((config.node_port || 3000), function () {
   console.log('Listening on port ' + (config.node_port || 3000) + '...');
 })
 

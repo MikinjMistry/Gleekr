@@ -10,6 +10,7 @@ var Otp = require("../models/otp");
 var User = require("../models/user");
 var Group = require("../models/group");
 var Bot = require("../models/bot");
+var Activity = require("../models/activity");
 
 var fs = require('fs');
 var path = require('path');
@@ -53,11 +54,7 @@ router.put('/', function (req, res, next) {
             filename = new Date().getTime() + extention;
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
-                    result = {
-                        message: "Error in profile image upload",
-                        error: err
-                    };
-                    res.status(config.MEDIA_ERROR_STATUS).json(result);
+                    return next(err);
                 } else {
                     imagepath = "/upload/" + userInfo.id + "/" + filename;
                     data = {};
@@ -69,7 +66,7 @@ router.put('/', function (req, res, next) {
                 }
             });
         } else {
-            res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
+            res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
         }
     } else {
         data = req.body;
@@ -89,12 +86,9 @@ router.put('/', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
 router.delete('/', function (req, res, next) {
-    User.update({_id: {$eq: req.userInfo.id}}, {$set: {isDeleted: true}}, function (err, response) {
+    User.update({ _id: { $eq: req.userInfo.id } }, { $set: { isDeleted: true } }, function (err, response) {
         if (err) {
-            result = {
-                message: "Error in deleting user account"
-            };
-            res.status(config.DATABASE_ERROR_STATUS).json(result);
+            return next(err);
         } else {
             var result = {
                 message: "Account deleted successfully"
@@ -130,17 +124,13 @@ router.post('/change_number', function (req, res, next) {
 
     if (!errors) {
         var code = Math.floor(1000 + Math.random() * 9000);
-        User.findOne({mobileNo: req.userInfo.mobileNo, isDeleted: {$ne: true}}, function (err, userData) {
+        User.findOne({ mobileNo: req.userInfo.mobileNo, isDeleted: { $ne: true } }, function (err, userData) {
             if (err) {
-                // Error in finding user
-                result = {
-                    message: "User not found"
-                };
-                res.status(config.NOT_FOUND).json(result);
+                return next(err);
             }
 
             if (userData) { // User found
-                User.findOne({mobileNo: req.body.newMobileNo, isDeleted: {$ne: true}}, function (err, newUserData) {
+                User.findOne({ mobileNo: req.body.newMobileNo, isDeleted: { $ne: true } }, function (err, newUserData) {
                     // finding new number is already registered or not
                     if (err) {
                         // Error in find operation
@@ -148,6 +138,7 @@ router.post('/change_number', function (req, res, next) {
                             message: "User not found"
                         };
                         res.status(config.NOT_FOUND).json(result);
+                        return;
                     }
 
                     if (newUserData) {
@@ -158,23 +149,16 @@ router.post('/change_number', function (req, res, next) {
                         res.status(config.VALIDATION_FAILURE_STATUS).json(result);
                     } else {
                         // Send OTP to new number
-                        Otp.findOne({mobileNo: req.body.newMobileNo}, function (err, otpData) {
+                        Otp.findOne({ mobileNo: req.body.newMobileNo }, function (err, otpData) {
                             if (err) {
-                                result = {
-                                    message: "Error in sending OTP"
-                                            //error: errors
-                                };
-                                res.status(config.VALIDATION_FAILURE_STATUS).json(result);
+                                return next(err);
                             }
 
                             if (otpData) {
-                                var json = {code: code, modified_datetime: new Date()};
-                                Otp.update({_id: {$eq: otpData._id}}, {$set: json}, function (err, response) {
+                                var json = { code: code, modified_datetime: new Date() };
+                                Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, response) {
                                     if (err) {
-                                        result = {
-                                            message: "Error occured in generating OTP"
-                                        };
-                                        res.status(config.DATABASE_ERROR_STATUS).json(result);
+                                        return next(err);
                                     } else {
                                         twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
@@ -187,10 +171,7 @@ router.post('/change_number', function (req, res, next) {
                                 var otpObject = new Otp(json);
                                 otpObject.save(function (err, data) {
                                     if (err) {
-                                        result = {
-                                            message: "Error occured in generating OTP"
-                                        };
-                                        res.status(config.DATABASE_ERROR_STATUS).json(result);
+                                        return next(err);
                                     } else {
                                         twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                                     }
@@ -246,44 +227,46 @@ router.post('/verifyotp', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Otp.findOne({mobileNo: req.body.mobileNo}, function (err, otpData) {
+        Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
-                res.status(config.NOT_FOUND).json({message: "User not found"});
+                return next(err);
             }
+
             if (otpData) {
                 opt_send_date = moment(otpData.updated_date);
                 now = moment();
                 var duration = now.diff(opt_send_date, 'minutes');
                 if (duration > process.env.OTP_EXPIRATION) {
-                    res.status(config.BAD_REQUEST).json({message: "OTP has expired"});
+                    res.status(config.BAD_REQUEST).json({ message: "OTP has expired" });
                 } else if (otpData.code == req.body.otp) {
-                    User.findOne({mobileNo: otpData.mobileNo, isDeleted: {$ne: true}}, function (err, userData) {
+                    User.findOne({ mobileNo: otpData.mobileNo, isDeleted: { $ne: true } }, function (err, userData) {
                         if (err) {
-                            res.status(config.NOT_FOUND).json({message: "User not found"});
+                            return next(err);
                         }
 
                         if (userData) {
-                            Otp.remove({_id: otpData._id}, function (err) {
+                            Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in deleting OTP"});
+                                    return next(err);
                                 }
-                                res.status(config.BAD_REQUEST).json({message: "Mobile number already in use"});
+                                res.status(config.BAD_REQUEST).json({ message: "Mobile number already in use" });
                             })
                         } else {
                             // OTP matched
-                            var token = jwt.sign({id: req.userInfo.id, mobileNo: req.body.mobileNo}, process.env.JWT_SECRET, {
+                            var token = jwt.sign({ id: req.userInfo.id, mobileNo: req.body.mobileNo }, process.env.JWT_SECRET, {
                                 expiresIn: 60 * 60 * 24 // expires in 24 hours
                             });
 
-                            User.update({_id: {$eq: req.userInfo.id}}, {$set: {mobileNo: req.body.mobileNo}}, function (err, response) {
+                            User.update({ _id: { $eq: req.userInfo.id } }, { $set: { mobileNo: req.body.mobileNo } }, function (err, response) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in updating phone number"});
+                                    return next(err);
                                 } else {
-                                    Otp.remove({_id: otpData._id}, function (err) {
+                                    Otp.remove({ _id: otpData._id }, function (err) {
                                         if (err) {
-                                            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in deleting OTP"});
+                                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in deleting OTP" });
+                                            return;
                                         }
-                                        var result = {message: "Mobile number updated successfully", token: token};
+                                        var result = { message: "Mobile number updated successfully", token: token };
                                         res.status(config.OK_STATUS).json(result);
                                     });
                                 }
@@ -293,10 +276,10 @@ router.post('/verifyotp', function (req, res, next) {
                     });
 
                 } else {
-                    res.status(config.BAD_REQUEST).json({message: "Invalid OTP"});
+                    res.status(config.BAD_REQUEST).json({ message: "Invalid OTP" });
                 }
             } else {
-                res.status(config.BAD_REQUEST).json({message: "Invalid request"});
+                res.status(config.BAD_REQUEST).json({ message: "Invalid request" });
             }
         });
     } else {
@@ -333,12 +316,13 @@ router.post('/send_card', function (req, res, next) {
     var errors = req.validationErrors();
     if (!errors) {
         var contactList = _.pluck(req.body.contacts, "mobileNo");
-        User.findOne({'_id': req.userInfo.id}, function (err, userdata) {
+        User.findOne({ '_id': req.userInfo.id }, function (err, userdata) {
             if (err) {
-                res.status(config.NOT_FOUND).json({message: "User data not found"});
-            } else {
+                return next(err);
+            }
+            if (userdata) {
                 _.each(contactList, function (con) {
-                    User.findOne({mobileNo: con, isDeleted: {$ne: true}}, function (err, data) {
+                    User.findOne({ mobileNo: con, isDeleted: { $ne: true } }, function (err, data) {
                         var msg = (userdata.name || 'Your friend') + ' has shared contact card from Gleekr.\n';
                         msg += 'Contact : ' + userdata.mobileNo + '\nEmail id : ' + (userdata.email || '-') + '\nJob title : ' + (userdata.jobTitle || '-') + '\nCompany : ' + (userdata.companyName || '-');
                         if (data) {
@@ -350,17 +334,18 @@ router.post('/send_card', function (req, res, next) {
                             // console.log(msg);
                             twiliohelper.send_card(con, msg);
                         }
-                        console.log(userdata);
                     });
                 });
                 var result = {
                     message: "Contact card send successfully."
                 };
                 res.status(config.OK_STATUS).json(result)
+            } else {
+                res.status(config.NOT_FOUND).json({ message: "User data not found" });
             }
         });
     } else {
-        res.status(config.BAD_REQUEST).json({message: errors});
+        res.status(config.BAD_REQUEST).json({ message: errors });
     }
 });
 
@@ -378,15 +363,29 @@ router.post('/send_card', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/', function (req, res, next) {
-    User.findOne({'_id': req.userInfo.id}, {activities: 0}, function (err, user) {
+    User.findOne({ _id: req.userInfo.id }, { activities: 0 }, function (err, user) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in getting user profile"});
+            return next(err);
         }
 
         if (user) {
-            res.status(config.OK_STATUS).json(user);
+            userData = user.toObject();
+
+            Activity.count({ user_id: req.userInfo.id }, function (err, data) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (data) {
+                    userData.totalActivities = data;
+                }
+
+                res.status(config.OK_STATUS).json(userData);
+
+            });
+
         } else {
-            res.status(config.NOT_FOUND).json({message: "User not found"});
+            res.status(config.NOT_FOUND).json({ message: "User not found" });
         }
     });
 });
@@ -425,9 +424,9 @@ router.post('/sync_contacts', function (req, res, next) {
         //Pluck all mobile numbers
         var mobileNumbers = _.pluck(req.body.contacts, "mobileNo");
 
-        User.find({mobileNo: {$in: mobileNumbers}, isDeleted: {$ne: true}}, {name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1}, function (error, matchedContacts) {
+        User.find({ mobileNo: { $in: mobileNumbers }, isDeleted: { $ne: true } }, { name: 1, mobileNo: 1, email: 1, image: 1, companyName: 1, jobTitle: 1 }, function (error, matchedContacts) {
             if (error) {
-                res.status(config.DATABASE_ERROR_STATUS).json({message: "Problem occured while syncing your contacts"});
+                return next(error);
             }
 
             if (matchedContacts && matchedContacts.length > 0) { // Gleekr contacts
@@ -441,9 +440,9 @@ router.post('/sync_contacts', function (req, res, next) {
             }); // Phone contacts
 
             //Get user's group
-            Group.find({"members._id": {"$in": _.pluck(responseData.gleekrUser, "_id")}}, function (error, groups) {
+            Group.find({ "members._id": { "$in": _.pluck(responseData.gleekrUser, "_id") } }, function (error, groups) {
                 if (error) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({message: "Problem occured while syncing your contacts"});
+                    return next(error);
                 }
 
                 if (groups && groups.length > 0) {
@@ -456,17 +455,20 @@ router.post('/sync_contacts', function (req, res, next) {
         });
 
     } else {
-        res.status(config.BAD_REQUEST).json({message: errors});
+        res.status(config.BAD_REQUEST).json({ message: errors });
     }
 });
 
 /**
- * @api {get} /user/actions User TimeLine - IN PROGRESS
- * @apiName User TimeLine
- * @apiGroup User
- * 
+ * @api {get} /user/actions BOT TimeLine
+ * @apiName BOT TimeLine
+ * @apiDescription Example: /user/actions?start=[START INDEX]&offset=[LIMIT]
+ * @apiGroup User - READY
  * 
  * @apiHeader {String}  x-access-token Users unique access-key
+ * 
+ * @apiParam {number} start Start index starting from 0
+ * @apiParam {number} offset Offset indicates the number of records which needs to be fetch each time
  * 
  * @apiSuccess (Success 200) {String} message Success message
  * @apiSuccess (Success 200) {Json} data User action on activity
@@ -474,55 +476,49 @@ router.post('/sync_contacts', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/actions', function (req, res, next) {
-    console.log(req.query);
     var schema = {
         'start': {
             notEmpty: true,
             errorMessage: "Start is required"
         },
-        'offset':{
+        'offset': {
             notEmpty: true,
             errorMessage: "Offset is required"
         }
-        
+
     };
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Bot.find({user_id: req.userInfo.id})
-                .populate('activity_id', null, 'activities')
-                .sort('-createdAt').skip(parseInt(req.query.start)).limit(parseInt(req.query.offset))
-                .exec(function (err, botData) {
-                    if (err) {
-                        console.log(err);
-                        res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in finding Bot"});
-                    }
-                    if (botData.length != 0) {
-                        botData = _.groupBy(botData, function (b) {
-                            var momentObj = moment(b.createdAt);
-                            return momentObj.format('YYYY-MM-DD'); // 2016-07-15
-                        });
-                        res.status(config.OK_STATUS).json(botData);
-                    } else {
-                        res.status(config.NOT_FOUND).json({message: "User actions not found"});
-                    }
-                });
+        Bot.find({ user_id: req.userInfo.id })
+            .populate('activity_id', null, 'activities')
+            .sort('-createdAt').skip(parseInt(req.query.start)).limit(parseInt(req.query.offset))
+            .exec(function (err, botData) {
+                if (err) {
+                    return next(err);
+                }
+                if (botData.length != 0) {
+                    botData = _.groupBy(botData, function (b) {
+                        var momentObj = moment(b.createdAt);
+                        return momentObj.format('YYYY-MM-DD'); // 2016-07-15
+                    });
+                    res.status(config.OK_STATUS).json(botData);
+                } else {
+                    res.status(config.NOT_FOUND).json({ message: "User actions not found" });
+                }
+            });
     } else {
-        res.status(config.BAD_REQUEST).json({message: errors});
+        res.status(config.BAD_REQUEST).json({ message: errors });
     }
 });
 
 /* Update User details */
 function updateUser(id, data, res) {
-    User.update({_id: {$eq: id}}, {$set: data}, function (err, response) {
+    User.update({ _id: { $eq: id } }, { $set: data }, function (err, response) {
         if (err) {
-            result = {
-                message: "Error in updating profile",
-                error: err
-            };
-            res.status(config.DATABASE_ERROR_STATUS).json(result);
+            return next(err);
         } else {
-            res.status(config.OK_STATUS).json({message: "Profile updated successfully"});
+            res.status(config.OK_STATUS).json({ message: "Profile updated successfully" });
         }
     });
 }
