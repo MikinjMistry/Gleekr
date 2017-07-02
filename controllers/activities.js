@@ -672,6 +672,14 @@ router.post('/chat_actions', function (req, res, next) {
     }
 });
 
+function archiveActivity()
+{
+	var today = moment;
+	Activity.findAndUpdate({isArchived: {$ne:false}, {endDate: {$lt : today}}},{$set:{isArchived:true}},function(err,response){
+		
+	});
+}
+
 function userActivityAction(req, res) {
     if (req.body.hasOwnProperty('isPinned') && req.body.hasOwnProperty('action')) {
         var action = (req.body.isPinned == true) || (req.body.isPinned == "true") ? "pin" : "unpin";
