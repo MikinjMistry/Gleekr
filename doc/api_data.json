@@ -982,9 +982,10 @@
   {
     "type": "get",
     "url": "/user/actions",
-    "title": "User TimeLine - IN PROGRESS",
-    "name": "User_TimeLine",
-    "group": "User",
+    "title": "BOT TimeLine",
+    "name": "BOT_TimeLine",
+    "description": "<p>Example: /user/actions?start=[START INDEX]&amp;offset=[LIMIT]</p>",
+    "group": "User___READY",
     "header": {
       "fields": {
         "Header": [
@@ -994,6 +995,26 @@
             "optional": false,
             "field": "x-access-token",
             "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "number",
+            "optional": false,
+            "field": "start",
+            "description": "<p>Start index starting from 0</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "number",
+            "optional": false,
+            "field": "offset",
+            "description": "<p>Offset indicates the number of records which needs to be fetch each time</p>"
           }
         ]
       }
@@ -1033,7 +1054,7 @@
     },
     "version": "0.0.0",
     "filename": "controllers/users.js",
-    "groupTitle": "User"
+    "groupTitle": "User___READY"
   },
   {
     "type": "post",

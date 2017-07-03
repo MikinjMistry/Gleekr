@@ -52,13 +52,13 @@ router.post('/sendotp', function (req, res, next) {
         var code = Math.floor(1000 + Math.random() * 9000);
         Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: "OTP generation failed" });
+                return next(err);
             }
             if (otpData) { //re-generate OTP
                 var updatedOTP = { code: code, modifiedAt: new Date() };
                 Otp.update({ _id: { $eq: otpData._id } }, { $set: updatedOTP }, function (err, data) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in generating OTP" });
+                        return next(err);
                     } else {
                         twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                     }
@@ -70,7 +70,7 @@ router.post('/sendotp', function (req, res, next) {
                 });
                 newOTP.save(function (err, data) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in generating OTP" });
+                        return next(err);
                     } else {
                         twiliohelper.sendSMS(req.body.mobileNo, 'Use ' + code + ' as Gleekr account security code', 'OTP has been sent successfully.', 'Error in sending sms.', res);
                     }
@@ -113,7 +113,7 @@ router.post('/verifyotp', function (req, res, next) {
     if (!errors) {
         Otp.findOne({ mobileNo: req.body.mobileNo }, function (err, otpData) {
             if (err) {
-                res.status(422).json({ message: "Invalid OTP" });
+                return next(err);
             }
             if (otpData) {
                 if (moment().diff(moment(otpData.updated_date), 'minutes') > config.OTP_EXPIRATION) { // Checking for expiration
@@ -122,7 +122,7 @@ router.post('/verifyotp', function (req, res, next) {
                     json = { mobileNo: otpData.mobileNo, isDeleted: false };
                     User.findOne(json, function (err, userData) {
                         if (err) {
-                            res.status(config.BAD_REQUEST).json({ message: "User not found" });
+                            return next(err);
                         }
                         if (userData) {
                             var userJson = { id: userData._id, mobileNo: userData.mobileNo };
@@ -132,7 +132,7 @@ router.post('/verifyotp', function (req, res, next) {
 
                             Otp.remove({ _id: otpData._id }, function (err) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in deleteing OTP" });
+                                    return next(err);
                                 }
                                 res.status(config.OK_STATUS).json({ message: "OTP is verified successfully", token: token, refreshToken: userData.refreshToken });
                             })
@@ -140,7 +140,7 @@ router.post('/verifyotp', function (req, res, next) {
                             var userObject = new User(json);
                             userObject.save(function (err, newUser) {
                                 if (err) {
-                                    res.status(config.BAD_REQUEST).json({ message: "User is already regster with gleekr" });
+                                    return next(err);
                                 } else {
                                     var refreshToken = jwt.sign({ id: newUser._id }, config.REFRESH_TOKEN_SECRET_KEY, {});
                                     async.parallel({
@@ -162,7 +162,7 @@ router.post('/verifyotp', function (req, res, next) {
                                         }
                                     }, function (err, results) {
                                         if (err) {
-                                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in OTP remove and update Token" });
+                                            return next(err);
                                         }
                                         var userJson = { id: newUser._id, mobileNo: newUser.mobileNo };
                                         var token = jwt.sign(userJson, config.ACCESS_TOKEN_SECRET_KEY, {
@@ -210,7 +210,7 @@ router.post('/voice_call', function (req, res, next) {
     var errors = req.validationErrors();
     var result = {};
     if (!errors) {
-		var url = 'http://' + config.REMOTE_HOST + ':' + config.node_port + '/outbound/' + encodeURIComponent(req.body.mobileNo);
+        var url = 'http://' + config.REMOTE_HOST + ':' + config.node_port + '/outbound/' + encodeURIComponent(req.body.mobileNo);
         twiliohelper.createCall(req.body.mobileNo, url, 'OTP has been sent via call.', res);
     } else {
         res.status(config.BAD_REQUEST).json({ message: errors });
@@ -225,13 +225,13 @@ router.post('/outbound/:mobileNo', function (request, response) {
 
     Otp.findOne({ mobileNo: mobileNo }, function (err, otpData) {
         if (err) {
-            res.status(config.BAD_REQUEST).json({ message: "Invalid OTP" });
+            return next(err);
         }
         if (otpData) {
             var json = { code: code, modified_datetime: new Date() };
             Otp.update({ _id: { $eq: otpData._id } }, { $set: json }, function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "OTP could not be generated" });
+                    return next(err);
                 } else {
                     twiliohelper.dailCall(mobileNo, voiceMsg, response);
                 }
@@ -244,7 +244,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
             var otpObject = new Otp(json);
             otpObject.save(function (err, data) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "OTP could not be generated" });
+                    return next(err);
                 } else {
                     twiliohelper.dailCall(mobileNo, voiceMsg, response);
                 }
@@ -274,7 +274,7 @@ router.post('/refresh_token', function (req, res, next) {
             } else {
                 User.findOne({ _id: decoded.id, isDeleted: false }, function (err, userData) {
                     if (err) {
-                        res.status(config.NOT_FOUND).json({ message: "User not found" });
+                        return next(err);
                     }
                     if (userData) {
                         if (temp == userData.refreshToken) {
@@ -299,7 +299,7 @@ router.post('/refresh_token', function (req, res, next) {
             }
         });
     } else {
-        return res.status(401).json({
+        return res.status(config.UNAUTHORIZED).json({
             message: 'Unauthorized access'
         });
     }

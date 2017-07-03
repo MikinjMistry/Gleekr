@@ -55,7 +55,7 @@ router.get('/', function (req, res, next) {
         },
     }, function (err, results) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in fetching activity data" });
+            return next(err);
         }
         var responseData = {
             new: [],
@@ -77,13 +77,13 @@ router.get('/', function (req, res, next) {
             }), 'activity_id');
 
             //new
-            var newActivity = _.union(invited, results.createdByMe);
+            var newActivity = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.action === "going" && !activity.isArchived; });
             _.each(newActivity, function (obj) {
                 var createdDate = new Date(obj.createdAt).getTime();
                 var modifiedDate = new Date(obj.modifiedAt).getTime();
                 if ((createdDate >= previousDate && createdDate <= currentDate) || (modifiedDate >= previousDate && modifiedDate <= currentDate)) {
                     var flag = jsonhelper.isExist(responseData.new, obj._id);
-                    if (!flag && obj.isArchived === false) {
+                    if (!flag) {
                         responseData.new.push(obj);
                     }
                 }
@@ -91,7 +91,7 @@ router.get('/', function (req, res, next) {
 
             //going
             responseData.going = _.pluck(_.filter(activities, function (activity) {
-                return activity.action === "going" && activity.isArchived === false;
+                return activity.action === "going" && !activity.isArchived;
             }), 'activity_id');
 
             //upcoming
@@ -108,7 +108,7 @@ router.get('/', function (req, res, next) {
                 var currentDate = new Date().getTime();
                 if (activityDateTime <= nextTwoDate && activityDateTime > currentDate) {
                     var flag = jsonhelper.isExist(responseData.upcoming, obj._id);
-                    if (!flag && obj.isArchived === false) {
+                    if (!flag) {
                         responseData.upcoming.push(obj);
                     }
                 }
@@ -116,12 +116,12 @@ router.get('/', function (req, res, next) {
 
             //Not Intrested
             responseData.notInterested = _.pluck(_.filter(activities, function (activity) {
-                return activity.action === "not_interested" && activity.isArchived === false;
+                return activity.action === "not_interested" && !activity.isArchived;
             }), 'activity_id');
 
             //pinned
             responseData.pinned = _.pluck(_.filter(activities, function (activity) {
-                return activity.isPinned && activity.isArchived === false;
+                return activity.isPinned && !activity.isArchived;
             }), 'activity_id');
 
             //all
@@ -212,7 +212,7 @@ router.post('/', function (req, res, next) {
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-                        res.status(config.MEDIA_ERROR_STATUS).json({ message: "Error in uploading activity image" });
+                        return next(err);
                     } else {
                         json.photo = "/upload/activity/" + filename;
                         insertActivity(json, req, res)
@@ -296,7 +296,7 @@ router.put('/', function (req, res, next) {
                 filename = new Date().getTime() + extention;
                 file.mv(dir + '/' + filename, function (err) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in activity image upload" });
+                        return next(err);
                     } else {
                         data = {};
                         if (req.body) {
@@ -346,52 +346,63 @@ router.get('/details', function (req, res, next) {
     var errors = req.validationErrors();
     if (!errors) {
         async.parallel({
-            total_invites_sent: function (callback) {
-                User.count({ 'activities.activity_id' : req.query.id}, function(err, data){
-                    if (err) 
-                        callback("Activity not found");
-                    callback(null, data);
-                });
-            },
-            total_invites_accepted: function (callback) {
-                User.count({ 'activities.activity_id' : req.query.id, 'activities.action' : 'going'}, function(err, data){
-                    if (err) 
-                        callback("Activity not found");
-                    callback(null, data);
-                });
-            },
-            total_invites_rejected: function (callback) {
-                User.count({ 'activities.activity_id' : req.query.id, 'activities.action' : 'not_interested'}, function(err, data){
-                    if (err) 
-                        callback("Activity not found");
-                    callback(null, data);
-                });
-            },
-            participants: function (callback) {
-                User.find({ 'activities.activity_id' : req.query.id, 'activities.action' : 'going'},{_id:1,mobileNo:1,name:1,image:1}, function(err, data){
-                    if (err) 
-                        callback("Activity not found");
-                    callback(null, data);
-                });
-            },
-            Activity: function (callback) {
+            activity: function (callback) {
                 Activity.findOne({ _id: req.query.id, isDeleted: { $ne: true } }, function (err, activityData) {
                     if (err) {
                         callback("Activity not found");
                     }
                     if (activityData) {
                         callback(null, activityData);
-                    } 
-
+                    }
                 });
             },
+            total_invites_sent: function (callback) {
+                User.count({ 'activities.activity_id': req.query.id, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                    if (err)
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            total_invites_accepted: function (callback) {
+                User.count({ 'activities.activity_id': req.query.id, 'activities.action': 'going', _id: { $ne: req.userInfo.id } }, function (err, data) {
+                    if (err)
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            total_invites_rejected: function (callback) {
+                User.count({ 'activities.activity_id': req.query.id, 'activities.action': { $eq: 'not_interested' }, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                    if (err)
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            },
+            participants: function (callback) {
+                User.find({ 'activities.activity_id': req.query.id, 'activities.action': 'going' }, { _id: 1, mobileNo: 1, name: 1, image: 1 }, function (err, data) {
+                    if (err)
+                        callback("Activity not found");
+                    callback(null, data);
+                });
+            }
         }, function (err, results) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: err });
+                return next(err);
             }
-            res.status(config.OK_STATUS).json(results);
+
+            if (results.activity) {
+                var activityDetails = results.activity.toObject();
+                activityDetails.totalInvitesSent = results.total_invites_sent || 0;
+                activityDetails.totalInvitesAccepted = results.total_invites_accepted || 0;
+                activityDetails.totalInvitesNotInterested = results.total_invites_rejected || 0;
+                activityDetails.participants = results.participants;
+
+                res.status(config.OK_STATUS).json(activityDetails);
+            } else {
+                res.status(config.NOT_FOUND).json({ message: "Activity not found" });
+            }
+
         });
-        
+
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error",
@@ -426,7 +437,7 @@ router.delete('/', function (req, res, next) {
         var json = { 'isDeleted': true };
         Activity.update({ _id: { $eq: req.query.id } }, { $set: json }, function (err, response) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: "Activity could not be deleted" });
+                return next(err);
             } else {
                 res.status(config.OK_STATUS).json({ message: "Activity deleted successfully" });
             }
@@ -502,7 +513,7 @@ router.post('/invites', function (req, res, next) {
                     });
                 }, function (err) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: err });
+                        return next(err);
                     }
                     res.status(config.OK_STATUS).json({ message: "Users are invited succesfully" });
                 });
@@ -549,7 +560,7 @@ router.post('/actions', function (req, res, next) {
                 if (req.body.hasOwnProperty('isPinned') || req.body.hasOwnProperty('action')) {
                     User.findOne({ _id: req.userInfo.id, "activities.activity_id": req.body.activity_id }, function (err, userData) {
                         if (err) {
-                            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action" });
+                            return next(err);
                         }
                         if (userData) {
                             var setJSON = {};
@@ -563,7 +574,7 @@ router.post('/actions', function (req, res, next) {
                                 $set: setJSON
                             }, function (err, data) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in updating user activity" });
+                                    return next(err);
                                 }
                                 userActivityAction(req, res);
                             });
@@ -572,7 +583,7 @@ router.post('/actions', function (req, res, next) {
                                 $push: { activities: req.body }
                             }, function (err, data) {
                                 if (err) {
-                                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action" });
+                                    return next(err);
                                 }
                                 userActivityAction(req, res);
                             });
@@ -619,38 +630,38 @@ router.post('/chat_actions', function (req, res, next) {
         if (req.body.hasOwnProperty('isPinned')) {
             Activity.findOne({ "chatMessages._id": req.body.id }, function (err, acitivityData) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in performing action" });
-                } else {
-
-                    if (acitivityData) {
-                        if (req.body.isPinned == true || req.body.isPinned == "true") {
-                            // Insert into activity collection
-                            Activity.findOneAndUpdate({ _id: acitivityData._id }, {
-                                $push: { pinnedItems: req.body.id }
-                            }, function (err, data) { });
-
-                            // Insert into user's activity collection
-                            User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": acitivityData._id }, {
-                                $push: { "activities.$.pinnedItems": req.body.id }
-                            }, function (err, data) { });
-                            res.status(config.OK_STATUS).json({ message: "Chat item has pinned successfully" });
-                        }
-                        else {
-                            // Remove from activity collection
-                            Activity.findOneAndUpdate({ _id: acitivityData._id }, {
-                                $pull: { pinnedItems: req.body.id }
-                            }, function (err, data) { });
-
-                            // Remove from user's collection
-                            User.findOneAndUpdate({ "activities.activity_id": acitivityData._id }, {
-                                $pull: { "activities.$.pinnedItems": req.body.id }
-                            }, function (err, data) { });
-                            res.status(config.OK_STATUS).json({ message: "Chat item has unpinned successfully" });
-                        }
-                    } else {
-                        res.status(config.NOT_FOUND).json({ message: "Invalid chat id" });
-                    }
+                    return next(err);
                 }
+
+                if (acitivityData) {
+                    if (req.body.isPinned == true || req.body.isPinned == "true") {
+                        // Insert into activity collection
+                        Activity.findOneAndUpdate({ _id: acitivityData._id }, {
+                            $push: { pinnedItems: req.body.id }
+                        }, function (err, data) { });
+
+                        // Insert into user's activity collection
+                        User.findOneAndUpdate({ _id: req.userInfo.id, "activities.activity_id": acitivityData._id }, {
+                            $push: { "activities.$.pinnedItems": req.body.id }
+                        }, function (err, data) { });
+                        res.status(config.OK_STATUS).json({ message: "Chat item has pinned successfully" });
+                    }
+                    else {
+                        // Remove from activity collection
+                        Activity.findOneAndUpdate({ _id: acitivityData._id }, {
+                            $pull: { pinnedItems: req.body.id }
+                        }, function (err, data) { });
+
+                        // Remove from user's collection
+                        User.findOneAndUpdate({ "activities.activity_id": acitivityData._id }, {
+                            $pull: { "activities.$.pinnedItems": req.body.id }
+                        }, function (err, data) { });
+                        res.status(config.OK_STATUS).json({ message: "Chat item has unpinned successfully" });
+                    }
+                } else {
+                    res.status(config.NOT_FOUND).json({ message: "Invalid chat id" });
+                }
+
             });
 
         } else {
@@ -691,7 +702,7 @@ function userActivityAction(req, res) {
             }
         }, function (err, results) {
             if (err) {
-                res.status(config.DATABASE_ERROR_STATUS).json({ message: 'Error in adding activity status' });
+                return next(err);
             }
             res.status(config.OK_STATUS).json({ message: "Activity action updated successfully" });
         });
@@ -704,7 +715,7 @@ function userActivityAction(req, res) {
                 'actionType': action
             }, function (err, result) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: err.message });
+                    return next(err);
                 }
                 res.status(config.OK_STATUS).json({ message: "Activity action updated successfully" });
             });
@@ -715,7 +726,7 @@ function userActivityAction(req, res) {
                 'actionType': req.body.action
             }, function (err, result) {
                 if (err) {
-                    res.status(config.DATABASE_ERROR_STATUS).json({ message: err.message });
+                    return next(err);
                 }
                 res.status(config.OK_STATUS).json({ message: "Activity action updated successfully" });
             });
@@ -726,7 +737,7 @@ function userActivityAction(req, res) {
 function updateActivity(id, data, req, res) {
     Activity.update({ _id: { $eq: id }, isArchived: { $ne: true }, isDeleted: { $ne: true } }, { $set: data }, function (err, response) {
         if (err) {
-            res.status(config.BAD_REQUEST).json({ message: "Invalid activity id" });
+            return next(err);
         } else {
             if (response.n == 1) {
                 bothelper.add({
@@ -744,7 +755,7 @@ function updateActivity(id, data, req, res) {
                     }
                 }, function (err, data) {
                     if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error in adding user activity action" });
+                        return next(err);
                     }
                 });
 
@@ -761,7 +772,7 @@ function insertActivity(objData, req, res) {
     var activityObject = new Activity(objData);
     activityObject.save(function (err, acitivityData) {
         if (err) {
-            res.status(config.DATABASE_ERROR_STATUS).json({ message: "Error occured in creating activity" });
+            return next(err);
         } else {
             // Add action in bot
             bothelper.add({

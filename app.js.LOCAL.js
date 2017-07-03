@@ -8,7 +8,7 @@ var bodyParserJsonError = require('express-body-parser-json-error');
 var config = require('./config');
 var db = require('./models/db');
 var moment = require('moment');
-//var moscaServer = require('./mqtt/mqttBroker');
+var moscaServer = require('./mqtt/mqttBroker');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -61,26 +61,18 @@ app.use(function (req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-<<<<<<< HEAD
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
             message: err.message,
             error: err
         });
-=======
-  app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.json({
-      message: err.message
->>>>>>> 63e61dfbc1bdbed5d7510c7a24d46b14fc1b2a4a
     });
 }
 
 // production error handler
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
-<<<<<<< HEAD
     res.status(err.status || 500);
     res.render('error', {
         message: err.message,
@@ -92,17 +84,6 @@ app.use(function (err, req, res, next) {
 
 app.listen((config.node_port || 3000), function () {
     console.log('Listening on port ' + (config.node_port || 3000) + '...');
-=======
-  res.status(err.status || 500);
-  res.json({
-    message: err.message
-  });
-});
-
-
-app.listen((config.node_port || 3000), function () {
-  console.log('Listening on port ' + (config.node_port || 3000) + '...');
->>>>>>> 63e61dfbc1bdbed5d7510c7a24d46b14fc1b2a4a
 })
 
 module.exports = app;
