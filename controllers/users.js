@@ -490,25 +490,6 @@ router.get('/actions', function (req, res, next) {
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-<<<<<<< HEAD
-        Bot.find({user_id: req.userInfo.id})
-                .populate('activity_id', null, 'activities')
-                .sort('-createdAt').skip(parseInt(req.query.start)).limit(parseInt(req.query.offset))
-                .exec(function (err, botData) {
-                    if (err) {
-                        res.status(config.DATABASE_ERROR_STATUS).json({message: "Error in finding Bot"});
-                    }
-                    if (botData.length != 0) {
-                        botData = _.groupBy(botData, function (b) {
-                            var momentObj = moment(b.createdAt);
-                            return momentObj.format('YYYY-MM-DD'); // 2016-07-15
-                        });
-                        res.status(config.OK_STATUS).json(botData);
-                    } else {
-                        res.status(config.NOT_FOUND).json({message: "User actions not found"});
-                    }
-                });
-=======
         Bot.find({ user_id: req.userInfo.id })
             .populate('activity_id', null, 'activities')
             .sort('-createdAt').skip(parseInt(req.query.start)).limit(parseInt(req.query.offset))
@@ -526,7 +507,6 @@ router.get('/actions', function (req, res, next) {
                     res.status(config.NOT_FOUND).json({ message: "User actions not found" });
                 }
             });
->>>>>>> 63e61dfbc1bdbed5d7510c7a24d46b14fc1b2a4a
     } else {
         res.status(config.BAD_REQUEST).json({ message: errors });
     }
