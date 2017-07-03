@@ -79,58 +79,64 @@ router.get('/', function (req, res, next) {
 
             //new
             var newActivity = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.action === "going" && !activity.isArchived; });
-            _.each(newActivity, function (obj) {
-                var createdDate = new Date(obj.createdAt).getTime();
-                var modifiedDate = new Date(obj.modifiedAt).getTime();
-                if ((createdDate >= previousDate && createdDate <= currentDate) || (modifiedDate >= previousDate && modifiedDate <= currentDate)) {
-                    var flag = jsonhelper.isExist(responseData.new, obj._id);
-                    if (!flag) {
-                        responseData.new.push(obj);
+            if (newActivity.length > 0) {
+                _.each(newActivity, function (obj) {
+                    var createdDate = new Date(obj.createdAt).getTime();
+                    var modifiedDate = new Date(obj.modifiedAt).getTime();
+                    if ((createdDate >= previousDate && createdDate <= currentDate) || (modifiedDate >= previousDate && modifiedDate <= currentDate)) {
+                        var flag = jsonhelper.isExist(responseData.new, obj._id);
+                        if (!flag) {
+                            responseData.new.push(obj);
+                        }
                     }
-                }
-            });
+                });
+                responseData.new = sortActivityByDate(responseData.new);
+            }
 
             //going
             responseData.going = _.pluck(_.filter(activities, function (activity) {
                 return activity.action === "going" && !activity.isArchived;
             }), 'activity_id');
-
+            responseData.going = sortActivityByDate(responseData.going);
             //upcoming
-            _.each(responseData.going, function (obj) {
-                var activityDate = new Date(obj.startDate);
-                var day = activityDate.getDate();
-                var month = activityDate.getMonth();
-                var year = activityDate.getFullYear();
-                var activityTime = new Date(obj.startTime);
-                var hours = activityTime.getHours();
-                var minute = activityTime.getMinutes();
-                var activityDateTime = new Date(year, month, day, hours, minute, 0).getTime();
+            if (responseData.going.length > 0) {
+                _.each(responseData.going, function (obj) {
+                    var activityDate = new Date(obj.startDate);
+                    var day = activityDate.getDate();
+                    var month = activityDate.getMonth();
+                    var year = activityDate.getFullYear();
+                    var activityTime = new Date(obj.startTime);
+                    var hours = activityTime.getHours();
+                    var minute = activityTime.getMinutes();
+                    var activityDateTime = new Date(year, month, day, hours, minute, 0).getTime();
 
-                var currentDate = new Date().getTime();
-                if (activityDateTime <= nextTwoDate && activityDateTime > currentDate) {
-                    var flag = jsonhelper.isExist(responseData.upcoming, obj._id);
-                    if (!flag) {
-                        responseData.upcoming.push(obj);
+                    var currentDate = new Date().getTime();
+                    if (activityDateTime <= nextTwoDate && activityDateTime > currentDate) {
+                        var flag = jsonhelper.isExist(responseData.upcoming, obj._id);
+                        if (!flag) {
+                            responseData.upcoming.push(obj);
+                        }
                     }
-                }
-            });
+                });
+                responseData.upcoming = sortActivityByDate(responseData.upcoming);
+            }
 
             //Not Intrested
             responseData.notInterested = _.pluck(_.filter(activities, function (activity) {
                 return activity.action === "not_interested" && !activity.isArchived;
             }), 'activity_id');
-
+            responseData.notInterested = sortActivityByDate(responseData.notInterested);
             //pinned
             responseData.pinned = _.pluck(_.filter(activities, function (activity) {
                 return activity.isPinned && !activity.isArchived;
             }), 'activity_id');
-
+            responseData.pinned = sortActivityByDate(responseData.pinned);
             //all
             responseData.all = _.union(responseData.new, responseData.going, responseData.upcoming, responseData.notInterested);
-
+            responseData.all = sortActivityByDate(responseData.all);
             //archived
             responseData.archived = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.isArchived === true; });
-
+            responseData.archived = sortActivityByDate(responseData.archived);
         }
         res.status(config.OK_STATUS).json(responseData);
     });
@@ -821,4 +827,7 @@ function insertActivity(objData, req, res) {
     });
 }
 
+function sortActivityByDate(arr) {
+    return _.sortBy(arr,function(node){return - (new Date(node.startDate).getTime()); });
+}
 module.exports = router;
