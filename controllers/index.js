@@ -9,7 +9,7 @@ var twiliohelper = require('../helpers/twilio');
 
 var User = require("../models/user");
 var Otp = require("../models/otp");
-var Activity = require("../models/activity");
+var Contact = require("../models/contact");
 
 /* Include controllers to handle routes */
 var users = require('./users');
@@ -157,6 +157,14 @@ router.post('/verifyotp', function (req, res, next) {
                                             Otp.remove({ _id: otpData._id }, function (err) {
                                                 if (err) {
                                                     callback({ message: "Error in deleteing OTP" }, null);
+                                                }
+                                                callback(null, true);
+                                            });
+                                        },
+                                        removeContact:function(callback){
+                                            Contact.remove({'number': req.body.mobileNo}, function (err, delete_result) {
+                                                if (err) {
+                                                    callback({ message: "Error in remove contact" }, null);
                                                 }
                                                 callback(null, true);
                                             });
