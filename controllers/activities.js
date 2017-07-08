@@ -447,7 +447,7 @@ router.get('/details', function (req, res, next) {
                 });
             },
             participants: function (callback) {
-                User.find({ 'activities': { "$elemMatch": { 'activity_id': req.query.id, 'action': 'going' } } }, { _id: 1, mobileNo: 1, name: 1, image: 1, 'activities.$':1}, function (err, data) {
+                User.find({ 'activities': { "$elemMatch": { 'activity_id': req.query.id } }, _id: { $ne: req.userInfo.id }}, { _id: 1, mobileNo: 1, name: 1, image: 1, 'activities.$':1}, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
@@ -463,7 +463,17 @@ router.get('/details', function (req, res, next) {
                 activityDetails.totalInvitesSent = results.total_invites_sent || 0;
                 activityDetails.totalInvitesAccepted = results.total_invites_accepted || 0;
                 activityDetails.totalInvitesNotInterested = results.total_invites_rejected || 0;
-                activityDetails.participants = results.participants;
+                activityDetails.participants = [];
+                _.each(results.participants,function(obj){
+                    var activityDetails1 = {};
+                    activityDetails1._id = obj._id;
+                    activityDetails1.mobileNo = obj.mobileNo;
+                    activityDetails1.name = obj.name;
+                    activityDetails1.image = obj.image;
+                    activityDetails1.action = obj.activities[0].action;
+                    activityDetails1.isPinned = obj.activities[0].isPinned || false;
+                    activityDetails.participants.push(activityDetails1);
+                });
 
                 res.status(config.OK_STATUS).json(activityDetails);
             } else {

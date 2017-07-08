@@ -374,7 +374,7 @@ router.get('/', function (req, res, next) {
         if (user) {
             userData = user.toObject();
 
-            Activity.count({user_id: req.userInfo.id}, function (err, data) {
+            Activity.count({user_id: req.userInfo.id,isDeleted: {$ne: true}}, function (err, data) {
                 if (err) {
                     return next(err);
                 }
