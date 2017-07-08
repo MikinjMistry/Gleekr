@@ -62,7 +62,7 @@ router.get('/', function (req, res, next) {
             new: [],
             upcoming: [],
             going: [],
-            createdByMe: (results.createdByMe && results.createdByMe.length > 0) ? _.filter(results.createdByMe, function (obj) { return obj.isArchived === false; }) : [],
+            createdByMe: (results.createdByMe && results.createdByMe.length > 0) ? results.createdByMe : [],
             pinned: [],
             notInterested: [],
             archived: [],
@@ -73,31 +73,36 @@ router.get('/', function (req, res, next) {
             var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
-            var invited = _.pluck(_.filter(activities, function (activity) {
-                return activity.action === "invited" && activity.activity_id;
-            }), 'activity_id');
+            var invited = _.filter(activities, function (activity) {
+                return (activity.action === "invited" || activity.action === "going") && activity.activity_id;
+            });
 
             //new
-            var newActivity = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.action === "going" && !activity.isArchived; });
-            if (newActivity.length > 0) {
-                _.each(newActivity, function (obj) {
-                    var createdDate = new Date(obj.createdAt).getTime();
-                    var modifiedDate = new Date(obj.modifiedAt).getTime();
+            if (invited.length > 0) {
+                _.each(invited, function (obj) {
+                    var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+
+                    var createdDate = new Date(activityDetails.createdAt).getTime();
+                    var modifiedDate = new Date(activityDetails.modifiedAt).getTime();
                     if ((createdDate >= previousDate && createdDate <= currentDate) || (modifiedDate >= previousDate && modifiedDate <= currentDate)) {
-                        var flag = jsonhelper.isExist(responseData.new, obj._id);
+                        var flag = jsonhelper.isExist(responseData.new, activityDetails._id);
                         if (!flag) {
-                            responseData.new.push(obj);
+                            responseData.new.push(activityDetails);
                         }
                     }
                 });
-                responseData.new = sortActivityByDate(responseData.new);
+                responseData.new = sortActivityByDate(responseData.new, 'asc', 'startTime');
             }
 
             //going
             responseData.going = _.pluck(_.filter(activities, function (activity) {
-                return activity.action === "going" && !activity.isArchived;
+                return activity.action === "going" && !activity.activity_id.isArchived;
             }), 'activity_id');
-            responseData.going = sortActivityByDate(responseData.going);
+            responseData.going = sortActivityByDate(responseData.going, 'asc', 'startTime');
+
             //upcoming
             if (responseData.going.length > 0) {
                 _.each(responseData.going, function (obj) {
@@ -118,25 +123,30 @@ router.get('/', function (req, res, next) {
                         }
                     }
                 });
-                responseData.upcoming = sortActivityByDate(responseData.upcoming);
+                responseData.upcoming = sortActivityByDate(responseData.upcoming, 'asc', 'startTime');
             }
 
             //Not Intrested
             responseData.notInterested = _.pluck(_.filter(activities, function (activity) {
-                return activity.action === "not_interested" && !activity.isArchived;
+                return activity.action === "not_interested" && !activity.activity_id.isArchived;
             }), 'activity_id');
-            responseData.notInterested = sortActivityByDate(responseData.notInterested);
+            responseData.notInterested = sortActivityByDate(responseData.notInterested, 'desc', 'createdAt');
+
             //pinned
             responseData.pinned = _.pluck(_.filter(activities, function (activity) {
-                return activity.isPinned && !activity.isArchived;
+                return activity.isPinned && !activity.activity_id.isArchived;
             }), 'activity_id');
-            responseData.pinned = sortActivityByDate(responseData.pinned);
+            responseData.pinned = sortActivityByDate(responseData.pinned, 'desc', 'createdAt');
+
             //all
-            responseData.all = _.union(responseData.new, responseData.going, responseData.upcoming, responseData.notInterested);
-            responseData.all = sortActivityByDate(responseData.all);
+            responseData.all = _.pluck(_.filter(activities, function (activity) {
+                return (activity.action === "invited" || activity.action === "going") && !activity.activity_id.isArchived;
+            }), 'activity_id');
+            responseData.all = sortActivityByDate(responseData.all, 'desc', 'createdAt');
+
             //archived
             responseData.archived = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.isArchived === true; });
-            responseData.archived = sortActivityByDate(responseData.archived);
+            responseData.archived = sortActivityByDate(responseData.archived, 'desc', 'createdAt');
         }
         res.status(config.OK_STATUS).json(responseData);
     });
@@ -364,28 +374,28 @@ router.get('/details', function (req, res, next) {
                 });
             },
             total_invites_sent: function (callback) {
-                User.count({'activities': {"$elemMatch" : { 'activity_id' : req.query.id }}, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({ 'activities': { "$elemMatch": { 'activity_id': req.query.id } }, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             total_invites_accepted: function (callback) {
-                User.count({ 'activities': {"$elemMatch" : { 'activity_id' : req.query.id , 'action': { $eq : 'going' } } }, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({ 'activities': { "$elemMatch": { 'activity_id': req.query.id, 'action': { $eq: 'going' } } }, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             total_invites_rejected: function (callback) {
-                User.count({ 'activities': {"$elemMatch" : { 'activity_id' : req.query.id, 'action': { $eq: 'not_interested' } }}, _id: { $ne: req.userInfo.id } }, function (err, data) {
+                User.count({ 'activities': { "$elemMatch": { 'activity_id': req.query.id, 'action': { $eq: 'not_interested' } } }, _id: { $ne: req.userInfo.id } }, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
                 });
             },
             participants: function (callback) {
-                User.find({ 'activities' : { "$elemMatch" : { 'activity_id': req.query.id, 'action': 'going' }}}, { _id: 1, mobileNo: 1, name: 1, image: 1 }, function (err, data) {
+                User.find({ 'activities': { "$elemMatch": { 'activity_id': req.query.id, 'action': 'going' } } }, { _id: 1, mobileNo: 1, name: 1, image: 1, 'activities.$':1}, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
@@ -679,24 +689,21 @@ router.post('/chat_actions', function (req, res, next) {
     }
 });
 
-cron.schedule('* * 1-31 * *', function(){
-  console.log('running a task every day');
-  archiveActivity();
+cron.schedule('* * 1-31 * *', function () {
+    console.log('running a task every day');
+    archiveActivity();
 });
 
-function archiveActivity()
-{
-	var today = moment();
-	Activity.update( { isArchived: {$ne:true}, endDate: {$lt : today}}, {$set:{isArchived:true}}, function(err,response) {
-		if(err)
-		{
-			console.log("err in cron : ",err);
-		}
-		if(response)
-		{
-			console.log("cron executed");
-		}
-	});
+function archiveActivity() {
+    var today = moment();
+    Activity.update({ isArchived: { $ne: true }, endDate: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
+        if (err) {
+            console.log("err in cron : ", err);
+        }
+        if (response) {
+            console.log("cron executed");
+        }
+    });
 }
 
 function userActivityAction(req, res) {
@@ -827,7 +834,12 @@ function insertActivity(objData, req, res) {
     });
 }
 
-function sortActivityByDate(arr) {
-    return _.sortBy(arr,function(node){return - (new Date(node.startDate).getTime()); });
+function sortActivityByDate(arr, order, sortingField) {
+    if (order === "desc") {
+        return _.sortBy(arr, function (node) { return - (new Date(node[sortingField]).getTime()); });
+    } else if (order === "asc") {
+        return _.sortBy(arr, function (node) { return (new Date(node[sortingField]).getTime()); });
+    }
 }
+
 module.exports = router;
