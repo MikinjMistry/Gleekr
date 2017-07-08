@@ -416,6 +416,8 @@ router.get('/details', function (req, res, next) {
                     var activityDetails1 = {};
                     activityDetails1._id = obj._id;
                     activityDetails1.mobileNo = obj.mobileNo;
+                    activityDetails1.name = obj.name;
+                    activityDetails1.image = obj.image;
                     activityDetails1.action = obj.activities[0].action;
                     activityDetails1.isPinned = obj.activities[0].isPinned || false;
                     activityDetails.participants.push(activityDetails1);
