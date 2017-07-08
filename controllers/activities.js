@@ -68,8 +68,12 @@ router.get('/', function (req, res, next) {
             archived: [],
             all: []
         };
+		
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
+			
+			console.log(activities);
+			
             var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
@@ -77,6 +81,24 @@ router.get('/', function (req, res, next) {
                 return (activity.action === "invited" || activity.action === "going") && activity.activity_id;
             });
 
+			//pinned
+			var pinned = _.filter(activities, function (activity) {
+                return activity.isPinned && !activity.activity_id.isArchived;
+            });
+			
+			if(pinned.length > 0)
+			{
+				_.each(pinned,function(obj){
+					var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+					
+					responseData.pinned.push(activityDetails);
+				});
+				responseData.pinned = sortActivityByDate(responseData.pinned, 'desc', 'createdAt');
+			}
+			
             //new
             if (invited.length > 0) {
                 _.each(invited, function (obj) {
@@ -98,11 +120,23 @@ router.get('/', function (req, res, next) {
             }
 
             //going
-            responseData.going = _.pluck(_.filter(activities, function (activity) {
+            going = _.filter(activities, function (activity) {
                 return activity.action === "going" && !activity.activity_id.isArchived;
-            }), 'activity_id');
-            responseData.going = sortActivityByDate(responseData.going, 'asc', 'startTime');
+            });
 
+			if(going.length > 0)
+			{
+				_.each(going,function(obj){
+					var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+					
+					responseData.going.push(activityDetails);
+				});
+				responseData.going = sortActivityByDate(responseData.going, 'asc', 'startTime');
+			}
+			
             //upcoming
             if (responseData.going.length > 0) {
                 _.each(responseData.going, function (obj) {
@@ -127,23 +161,41 @@ router.get('/', function (req, res, next) {
             }
 
             //Not Intrested
-            responseData.notInterested = _.pluck(_.filter(activities, function (activity) {
+            notInterested = _.filter(activities, function (activity) {
                 return activity.action === "not_interested" && !activity.activity_id.isArchived;
-            }), 'activity_id');
-            responseData.notInterested = sortActivityByDate(responseData.notInterested, 'desc', 'createdAt');
+            });
 
-            //pinned
-            responseData.pinned = _.pluck(_.filter(activities, function (activity) {
-                return activity.isPinned && !activity.activity_id.isArchived;
-            }), 'activity_id');
-            responseData.pinned = sortActivityByDate(responseData.pinned, 'desc', 'createdAt');
-
+			if(notInterested.length > 0)
+			{
+				_.each(notInterested,function(obj){
+					var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+					
+					responseData.notInterested.push(activityDetails);
+				});
+				responseData.notInterested = sortActivityByDate(responseData.notInterested, 'desc', 'createdAt');
+			}
+			
             //all
-            responseData.all = _.pluck(_.filter(activities, function (activity) {
+            all = _.filter(activities, function (activity) {
                 return (activity.action === "invited" || activity.action === "going") && !activity.activity_id.isArchived;
-            }), 'activity_id');
-            responseData.all = sortActivityByDate(responseData.all, 'desc', 'createdAt');
-
+            });
+            
+			if(all.length > 0)
+			{
+				_.each(all,function(obj){
+					var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+					
+					responseData.all.push(activityDetails);
+				});
+				responseData.all = sortActivityByDate(responseData.all, 'desc', 'createdAt');
+			}
+			
             //archived
             responseData.archived = _.filter(_.union(invited, results.createdByMe), function (activity) { return activity.isArchived === true; });
             responseData.archived = sortActivityByDate(responseData.archived, 'desc', 'createdAt');
