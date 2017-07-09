@@ -51,7 +51,25 @@ router.get('/', function (req, res, next) {
                 if (err) {
                     callback('Error in fetching My activity', null);
                 }
-                callback(null, data);
+				
+				var ret = [];
+				
+				async.each(data,function(item,callback1){
+					User.find({ 'activities': { "$elemMatch": { 'activity_id': item._id } }, _id: { $eq: req.userInfo.id }}, {'activities.$':1}, function (err, subdata) {
+						if (err)
+							callback("Activity not found");
+						
+						var activityDetails = {};
+						activityDetails = Object.assign({}, item.toObject());;
+						activityDetails.action = subdata[0].activities[0].action;
+						activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
+						
+						ret.push(activityDetails);
+						callback1();
+					});
+				},function(err){
+					callback(null, ret);
+				}); 
             });
         },
     }, function (err, results) {
@@ -71,8 +89,6 @@ router.get('/', function (req, res, next) {
 		
         if (results.others.length != 0) {
             var activities = results.others[0].activities;
-			
-			console.log(activities);
 			
             var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
@@ -751,7 +767,7 @@ router.post('/chat_actions', function (req, res, next) {
     }
 });
 
-cron.schedule('* * 1-31 * *', function () {
+cron.schedule('0 0 0 * * *', function () {
     console.log('running a task every day');
     archiveActivity();
 });
