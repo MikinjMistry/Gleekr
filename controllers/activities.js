@@ -86,10 +86,10 @@ router.get('/', function (req, res, next) {
             archived: [],
             all: []
         };
-		
-        if (results.others.length != 0) {
-            var activities = results.others[0].activities;
-			
+
+        if (results.others.length > 0 && results.others[0].activities.length > 0) {
+            var activities = _.filter(results.others[0].activities, function (activity) { return activity.activity_id; }) || [];
+
             var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
@@ -463,7 +463,7 @@ router.get('/details', function (req, res, next) {
                 });
             },
             participants: function (callback) {
-                User.find({ 'activities': { "$elemMatch": { 'activity_id': req.query.id } }, _id: { $ne: req.userInfo.id }}, { _id: 1, mobileNo: 1, name: 1, image: 1, 'activities.$':1}, function (err, data) {
+                User.find({ 'activities': { "$elemMatch": { 'activity_id': req.query.id } }}, { _id: 1, mobileNo: 1, name: 1, image: 1, 'activities.$':1}, function (err, data) {
                     if (err)
                         callback("Activity not found");
                     callback(null, data);
