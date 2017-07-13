@@ -3,9 +3,18 @@ var config = require('../config');
 var url = 'mqtt://' + config.HOST + ':1883';
 // var url = 'mqtt://test.mosquitto.org';
 var client = mqtt.connect(url);
+
+
+client.on("message", function (topic, data) {
+    /*console.log("Topic", topic);
+    console.log("value", data.toString());
+    console.log("-------------------------------");*/
+})
+
 /*** client on connect ***/
 client.on("connect", function () {
     console.log("cleint is connected");
+    client.subscribe(["$SYS/#", "test"]);
 })
 
 /*** client on reconnect ***/

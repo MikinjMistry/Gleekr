@@ -61,7 +61,6 @@ router.get('/', function (req, res, next) {
 
                         var activityDetails = {};
                         activityDetails = Object.assign({}, item.toObject());
-                        ;
                         activityDetails.action = subdata[0].activities[0].action;
                         activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
 
