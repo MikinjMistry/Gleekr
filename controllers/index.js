@@ -15,12 +15,14 @@ var Contact = require("../models/contact");
 var users = require('./users');
 var activities = require('./activities');
 var chat = require('./chat');
+var group = require('./group');
 var auth = require('../middlewares/auth');
 
 /* Link controllers with routes */
 router.use('/user', auth, users);
 router.use('/activity', auth, activities);
 router.use('/chat', auth, chat);
+router.use('/group', auth, group);
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
