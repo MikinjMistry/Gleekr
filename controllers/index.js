@@ -14,11 +14,13 @@ var Contact = require("../models/contact");
 /* Include controllers to handle routes */
 var users = require('./users');
 var activities = require('./activities');
+var chat = require('./chat');
 var auth = require('../middlewares/auth');
 
 /* Link controllers with routes */
 router.use('/user', auth, users);
 router.use('/activity', auth, activities);
+router.use('/chat', auth, chat);
 
 /* GET home page. */
 router.get('/', function (req, res, next) {

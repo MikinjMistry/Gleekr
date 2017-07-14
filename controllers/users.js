@@ -448,7 +448,6 @@ router.post('/sync_contacts', function (req, res, next) {
                         return {'number': phone, user_id: req.userInfo.id};
                     });
                     Contact.remove({'user_id': req.userInfo.id}, function (error, delete_result) {
-                        console.log("del:",delete_result);
                         if (error) {
                             callback(error);
                         }
@@ -457,7 +456,6 @@ router.post('/sync_contacts', function (req, res, next) {
                                 if (error) {
                                     callback(error);
                                 }
-                                console.log("data:",data);
                                 callback(null, data);
                             });
                         }
@@ -477,7 +475,6 @@ router.post('/sync_contacts', function (req, res, next) {
 
                 }
             }, function (err, results) {
-                console.log("results:", results);
                 if (err) {
                     return next(err);
                 }
