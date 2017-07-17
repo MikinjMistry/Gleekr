@@ -9,8 +9,6 @@ var Chat = require("../models/chat");
 var bothelper = require('../helpers/bot_helpers');
 var jsonhelper = require('../helpers/json_helpers');
 var mqttClient = require('../mqtt/mqttClient');
-var sys = require('sys');
-var exec = require('child_process').exec;
 
 var moment = require('moment');
 var fs = require('fs');
@@ -63,39 +61,40 @@ router.post('/send_message', function (req, res, next) {
             if (data) {
                 var messageData = Object.assign({}, req.body);
                 messageData.fromUserId = req.userInfo.id;
-                messageData.fromUsername = data.name;
+                messageData.fromUserName = data.name;
                 delete messageData.to_user_id;
 
-                mqttClient.publish(req.body.to_user_id, JSON.stringify(messageData), { qos: 2 });
-
-                var saveChat = Object.assign({}, req.body);
-                saveChat.from_user_id = req.userInfo.id;
-                var chat = new Chat(saveChat);
-                chat.save(function (error, data) {
-                    if (error) {
-                        return next(error);
+                //Publish message
+                mqttClient.publishMessage(req.body.to_user_id, messageData, function (data) {
+                    if (data) {
+                        ///Save chat
+                        var chatData = Object.assign({}, messageData);
+                        chatData.from_user_id = req.userInfo.id;
+                        saveChat(chatData);
+                        res.status(config.OK_STATUS).json({ message: "Message sent" });
+                    } else {
+                        res.status(config.BAD_REQUEST).json({ message: "Unable to send message" });
                     }
                 });
-
-                res.status(config.OK_STATUS).json({ message: "Message sent" });
             } else {
-                res.status(config.BAD_REQUEST).json({ message: "Invalid user" });
+                res.status(config.BAD_REQUEST).json({ message: "Invalid sender" });
             }
 
         });
-
-        /*exec("mosquitto_pub -t '" + req.body.from_user_id + "/topic' -m '" + JSON.stringify(req.body) + "'", function (error, stdout, stderr) {
-            sys.print('stdout: ' + stdout);
-            sys.print('stderr: ' + stderr);
-            if (error !== null) {
-                console.log('exec error: ' + error);
-            }
-        });*/
 
     } else {
         res.status(config.BAD_REQUEST).json({ message: "Validation error", error: errors });
     }
 });
+
+function saveChat(data) {
+    var chat = new Chat(data);
+    chat.save(function (error, data) {
+        if (error) {
+            return next(error);
+        }
+    });
+}
 
 
 module.exports = router;
