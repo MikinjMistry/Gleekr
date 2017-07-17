@@ -765,9 +765,26 @@ cron.schedule('0 0 0 * * *', function () {
     archiveActivity();
 });
 
+cron.schedule('0 * * * * *', function () {
+    console.log('running a task every minute');
+    archiveActivityForEnddate();
+});
+
 function archiveActivity() {
     var today = moment();
     Activity.update({ isArchived: { $ne: true }, endDate: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
+        if (err) {
+            console.log("err in cron : ", err);
+        }
+        if (response) {
+            console.log("cron executed");
+        }
+    });
+}
+
+function archiveActivityForEnddate() {
+    var today = new Date(moment().subtract(1, 'days').format("YYYY-MM-DD HH:mm")).getTime();
+    Activity.update({ isArchived: { $ne: true }, endDate: { $exists: false }, endTime: { $exists: false }, modifiedAt :{$lt : today} }, { $set: { isArchived: true } }, function (err, response) {
         if (err) {
             console.log("err in cron : ", err);
         }
