@@ -589,7 +589,7 @@ router.post('/invites', function (req, res, next) {
                                     'user_id': userId,
                                     'activity_id': req.body.activity_id,
                                     'actionType': 'invited'
-                                }, function (err, result) {
+                                },req.userInfo.id, function (err, result) {
                                     if (err) {
                                         callback("Error in adding data in bot");
                                     }
@@ -803,7 +803,7 @@ function userActivityAction(req, res) {
                     'user_id': req.userInfo.id,
                     'activity_id': req.body.activity_id,
                     'actionType': action
-                }, function (err, result) {
+                },req.userInfo.id, function (err, result) {
                     if (err) {
                         callback({ message: err.message }, null);
                     }
@@ -815,7 +815,7 @@ function userActivityAction(req, res) {
                     'user_id': req.userInfo.id,
                     'activity_id': req.body.activity_id,
                     'actionType': req.body.action
-                }, function (err, result) {
+                },req.userInfo.id, function (err, result) {
                     if (err) {
                         callback({ message: err.message }, null);
                     }
@@ -835,7 +835,7 @@ function userActivityAction(req, res) {
                 'user_id': req.userInfo.id,
                 'activity_id': req.body.activity_id,
                 'actionType': action
-            }, function (err, result) {
+            },req.userInfo.id, function (err, result) {
                 if (err) {
                     return next(err);
                 }
@@ -846,7 +846,7 @@ function userActivityAction(req, res) {
                 'user_id': req.userInfo.id,
                 'activity_id': req.body.activity_id,
                 'actionType': req.body.action
-            }, function (err, result) {
+            },req.userInfo.id, function (err, result) {
                 if (err) {
                     return next(err);
                 }
@@ -879,7 +879,7 @@ function updateActivity(id, data, req, res) {
                     'user_id': req.userInfo.id,
                     'activity_id': id,
                     'actionType': 'update'
-                }, function (err, result) { });
+                },req.userInfo.id, function (err, result) { });
                 Activity.findOneAndUpdate({ _id: id }, {
                     $push: {
                         chatMessages: {
@@ -927,7 +927,7 @@ function insertActivity(objData, req, res) {
                 'user_id': req.userInfo.id,
                 'activity_id': acitivityData._id,
                 'actionType': 'create'
-            }, function (err, result) { });
+            },req.userInfo.id, function (err, result) { });
 
             //Set user's deault acitivity action to going
             User.findOneAndUpdate({ _id: req.userInfo.id }, {
@@ -940,7 +940,7 @@ function insertActivity(objData, req, res) {
                     'user_id': req.userInfo.id,
                     'activity_id': acitivityData._id,
                     'actionType': 'going'
-                }, function (err, result) { });
+                },req.userInfo.id, function (err, result) { });
             });
 
             res.status(config.OK_STATUS).json({ message: "Activity created successfully", activity: acitivityData });
