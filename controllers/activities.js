@@ -16,7 +16,7 @@ var async = require('async');
 var _ = require('underscore');
 
 /**
- * @api {get} /activity Get all activity - READY
+ * @api {get} /activity Get all activity
  * @apiName Get All activity
  * @apiGroup Activity
  * 
@@ -223,7 +223,7 @@ router.get('/', function (req, res, next) {
 });
 
 /**
- * @api {post} /activity Insert Activity - READY
+ * @api {post} /activity Insert Activity
  * @apiName Insert Activity 
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -235,6 +235,7 @@ router.get('/', function (req, res, next) {
  * @apiParam {Date} [endDate] form-data: Activity end date, format: ISO date
  * @apiParam {Date} [endTime] form-data: Activity end time, format: ISO date
  * @apiParam {String} location form-data: Activity location
+ * @apiParam {Boolean} [isPublic] form-data: Mark activity as private or public
  * @apiParam {String} [description] form-data: Activity description
  * @apiParam {Number} [noOfParticipants] form-data: Number of participants
  * @apiParam {Decimal} [costPerPerson] form-data: cost per person
@@ -314,7 +315,7 @@ router.post('/', function (req, res, next) {
 });
 
 /**
- * @api {put} /activity Update Activity - READY
+ * @api {put} /activity Update Activity 
  * @apiName Update Activity
  * @apiGroup Activity
  * @apiDescription You need to pass Form Data
@@ -326,6 +327,7 @@ router.post('/', function (req, res, next) {
  * @apiParam {Date} startTime form-data: Activity start time, format: ISO date
  * @apiParam {Date} endDate form-data: Activity end date, format: ISO date
  * @apiParam {Date} endTime form-data: Activity end time, format: ISO date
+ * @apiParam {Boolean} isPublic form-data: Mark activity as private or public
  * @apiParam {String} location form-data: Activity location
  * @apiParam {String} description form-data: Activity description
  * @apiParam {Number} noOfParticipants form-data: Number of participants
@@ -402,7 +404,7 @@ router.put('/', function (req, res, next) {
 });
 
 /**
- * @api {get} /activity/details?id=:id Get activity details - READY
+ * @api {get} /activity/details?id=:id Get activity details 
  * @apiName Get activity details
  * @apiGroup Activity
  * 
@@ -502,7 +504,7 @@ router.get('/details', function (req, res, next) {
 
 
 /**
- * @api {Delete} /activity?id=:id Delete Activity - READY
+ * @api {Delete} /activity?id=:id Delete Activity 
  * @apiName Delete Activity
  * @apiGroup Activity
  * 
@@ -540,7 +542,7 @@ router.delete('/', function (req, res, next) {
 });
 
 /**
- * @api {POST} /activity/invites Send activity invites - READY
+ * @api {POST} /activity/invites Send activity invites 
  * @apiName Send activity invites
  * @apiGroup Activity
  * 
@@ -617,7 +619,7 @@ router.post('/invites', function (req, res, next) {
 });
 
 /**
- * @api {POST} /activity/actions Add/update activity action - READY
+ * @api {POST} /activity/actions Add/update activity action 
  * @apiName Add/update activity action
  * @apiDescription isPinned and action should be passed alternately depending on the action which needs to be done for the activity id passed.
  * @apiGroup Activity

@@ -20,7 +20,7 @@ var GroupSchema = new Schema({
     name: String,
     image: String,
     user_id: mongoose.Schema.Types.ObjectId,
-    isDeleted: Boolean,
+    isDeleted: {type: Boolean, default: false},
     createdAt: { type: Date, default: Date.now },
     modifiedAt: { type: Date, default: Date.now },
     members: [MemberSchema], //Embedding MemberSchema into group
