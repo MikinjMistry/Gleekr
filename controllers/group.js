@@ -58,13 +58,13 @@ router.post('/', function (req, res, next) {
                             if (err) {
                                 return next(err);
                             } else {
-                                res.status(config.OK_STATUS).json({ message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages") });
+                                res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
                             }
                         });
                     }
                 });
             } else {
-                res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
+                res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
             }
         } else {
             var groupObject = new Group(json);
@@ -72,7 +72,7 @@ router.post('/', function (req, res, next) {
                 if (err) {
                     return next(err);
                 } else {
-                    res.status(config.OK_STATUS).json({ message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages") });
+                    res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
                 }
             });
         }
@@ -102,6 +102,9 @@ router.put('/', function (req, res, next) {
     var schema = {
         'id': {
             notEmpty: true,
+            isMongoId: {
+                errorMessage: "Wrong Object id"
+            },
             errorMessage: "group id is required"
         }
     };
@@ -109,47 +112,59 @@ router.put('/', function (req, res, next) {
     var errors = req.validationErrors();
 
     if (!errors) {
-        var json = req.body;
-        var userInfo = req.userInfo;
-        var id = json.id;
-        delete json['id'];
-        if (req.files) {
-            var file = req.files.file;
-            var dir = "./upload/" + userInfo.id;
-            var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
-            if (mimetype.indexOf(file.mimetype) != -1) {
-                if (!fs.existsSync(dir)) {
-                    fs.mkdirSync(dir);
-                }
-                extention = path.extname(file.name);
-                filename = new Date().getTime() + extention;
-                file.mv(dir + '/' + filename, function (err) {
-                    if (err) {
-                        return next(err);
-                    } else {
-                        imagepath = "/upload/" + userInfo.id + "/" + filename;
-                        json.image = imagepath;
-                        Group.update({ _id: { $eq: id } }, { $set: json }, function (err, response) {
+        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+            if (err) {
+                return next(err);
+            }
+            if (groupData) {
+                var json = req.body;
+                var userInfo = req.userInfo;
+                var id = json.id;
+                delete json['id'];
+                if (req.files) {
+                    var file = req.files.file;
+                    var dir = "./upload/" + userInfo.id;
+                    var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
+                    if (mimetype.indexOf(file.mimetype) != -1) {
+                        if (!fs.existsSync(dir)) {
+                            fs.mkdirSync(dir);
+                        }
+                        extention = path.extname(file.name);
+                        filename = new Date().getTime() + extention;
+                        file.mv(dir + '/' + filename, function (err) {
                             if (err) {
                                 return next(err);
                             } else {
-                                res.status(config.OK_STATUS).json({ message: "Group updated successfully" });
+                                imagepath = "/upload/" + userInfo.id + "/" + filename;
+                                json.image = imagepath;
+                                Group.update({_id: {$eq: id}}, {$set: json}, function (err, response) {
+                                    if (err) {
+                                        return next(err);
+                                    } else {
+                                        res.status(config.OK_STATUS).json({message: "Group updated successfully"});
+                                    }
+                                });
                             }
                         });
+                    } else {
+                        res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
                     }
-                });
-            } else {
-                res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
-            }
-        } else {
-            Group.update({ _id: { $eq: id } }, { $set: json }, function (err, response) {
-                if (err) {
-                    return next(err);
                 } else {
-                    res.status(config.OK_STATUS).json({ message: "Group updated successfully" });
+                    Group.update({_id: {$eq: id}}, {$set: json}, function (err, response) {
+                        if (err) {
+                            return next(err);
+                        } else {
+                            res.status(config.OK_STATUS).json({message: "Group updated successfully"});
+                        }
+                    });
                 }
-            });
-        }
+
+            } else {
+                res.status(config.BAD_REQUEST).json({
+                    message: "Group not found",
+                });
+            }
+        })
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
@@ -173,22 +188,37 @@ router.delete('/', function (req, res, next) {
     var schema = {
         'id': {
             notEmpty: true,
+            isMongoId: {
+                errorMessage: "Wrong Object id"
+            },
             errorMessage: "group id is required"
         }
     };
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.update({ _id: { $eq: req.query.id } }, { $set: { isDeleted: true } }, function (err, response) {
+        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
+                console.log(err)
                 return next(err);
-            } else {
-                var result = {
-                    message: "Group deleted successfully"
-                };
-                res.status(config.OK_STATUS).json(result);
             }
-        });
+            if (groupData) {
+                Group.update({_id: {$eq: req.query.id}}, {$set: {isDeleted: true}}, function (err, response) {
+                    if (err) {
+                        return next(err);
+                    } else {
+                        var result = {
+                            message: "Group deleted successfully"
+                        };
+                        res.status(config.OK_STATUS).json(result);
+                    }
+                });
+            } else {
+                res.status(config.BAD_REQUEST).json({
+                    message: "Group not found",
+                });
+            }
+        })
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
@@ -218,25 +248,39 @@ router.post('/add_member', function (req, res, next) {
         },
         'id': {
             notEmpty: true,
+            isMongoId: {
+                errorMessage: "Wrong Object id"
+            },
             errorMessage: "group id is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        var arr = _.map(req.body.members, function (val) {
-            return { 'user_id': val };
-        });
-        Group.findOneAndUpdate({ _id: req.body.id }, {
-            $pushAll: {
-                'members': arr
-            }
-        }, function (err, data) {
+        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
-            res.status(config.OK_STATUS).json({ 'message': 'Member successfully added.' });
-        });
+            if (groupData) {
+                var arr = _.map(req.body.members, function (val) {
+                    return {'user_id': val};
+                });
+                Group.findOneAndUpdate({_id: req.body.id}, {
+                    $pushAll: {
+                        'members': arr
+                    }
+                }, function (err, data) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(config.OK_STATUS).json({'message': 'Member successfully added.'});
+                });
+            } else {
+                res.status(config.BAD_REQUEST).json({
+                    message: "Group not found",
+                });
+            }
+        })
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
@@ -265,22 +309,37 @@ router.post('/remove_member', function (req, res, next) {
         },
         'id': {
             notEmpty: true,
+            isMongoId: {
+                errorMessage: "Wrong Object id"
+            },
             errorMessage: "group id is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOneAndUpdate({ _id: req.body.id }, {
-            $pull: {
-                'members': { 'user_id': { '$in': req.body.members } }
-            }
-        }, function (err, data) {
+        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
-            res.status(config.OK_STATUS).json({ 'message': 'Member successfully removed.' });
-        });
+            if (groupData) {
+                Group.findOneAndUpdate({_id: req.body.id}, {
+                    $pull: {
+                        'members': {'user_id': {'$in': req.body.members}}
+                    }
+                }, function (err, data) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(config.OK_STATUS).json({'message': 'Member successfully removed.'});
+                });
+
+            } else {
+                res.status(config.BAD_REQUEST).json({
+                    message: "Group not found",
+                });
+            }
+        })
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
@@ -304,22 +363,36 @@ router.post('/exit_group', function (req, res, next) {
     var schema = {
         'id': {
             notEmpty: true,
+            isMongoId: {
+                errorMessage: "Wrong Object id"
+            },
             errorMessage: "group id is required"
         }
     };
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOneAndUpdate({ _id: req.body.id }, {
-            $pull: {
-                'members': { 'user_id': { '$eq': req.userInfo.id } }
-            }
-        }, function (err, data) {
+        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
-            res.status(config.OK_STATUS).json({ 'message': 'Exit from group successfully.' });
-        });
+            if (groupData) {
+                Group.findOneAndUpdate({_id: req.body.id}, {
+                    $pull: {
+                        'members': {'user_id': {'$eq': req.userInfo.id}}
+                    }
+                }, function (err, data) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(config.OK_STATUS).json({'message': 'Exit from group successfully.'});
+                });
+            } else {
+                res.status(config.BAD_REQUEST).json({
+                    message: "Group not found",
+                });
+            }
+        })
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Validation Error ",
