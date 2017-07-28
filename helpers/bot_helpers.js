@@ -54,7 +54,7 @@ botFunction.add = function (botJson, loginUser, callback) {
                             console.log("action:", action);
                             var message = "";
                             if (action == "create") {
-                                message = "You have created " + activityInfo + " activity.";
+                                message = "You have created " + activityName + " activity.";
                             } else if (action == "update") {
                                 message = activityName + " has been updated by " + userName + ".";
                             } else if (action == "pin") {

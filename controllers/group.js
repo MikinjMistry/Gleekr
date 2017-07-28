@@ -103,7 +103,7 @@ router.put('/', function (req, res, next) {
         'id': {
             notEmpty: true,
             isMongoId: {
-                errorMessage: "Wrong Object id"
+                errorMessage: "Invalid id"
             },
             errorMessage: "group id is required"
         }
@@ -112,7 +112,7 @@ router.put('/', function (req, res, next) {
     var errors = req.validationErrors();
 
     if (!errors) {
-        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
@@ -160,7 +160,7 @@ router.put('/', function (req, res, next) {
                 }
 
             } else {
-                res.status(config.BAD_REQUEST).json({
+                res.status(config.NOT_FOUND).json({
                     message: "Group not found",
                 });
             }
@@ -189,7 +189,7 @@ router.delete('/', function (req, res, next) {
         'id': {
             notEmpty: true,
             isMongoId: {
-                errorMessage: "Wrong Object id"
+                errorMessage: "Invalid id"
             },
             errorMessage: "group id is required"
         }
@@ -199,7 +199,6 @@ router.delete('/', function (req, res, next) {
     if (!errors) {
         Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
-                console.log(err)
                 return next(err);
             }
             if (groupData) {
@@ -214,7 +213,7 @@ router.delete('/', function (req, res, next) {
                     }
                 });
             } else {
-                res.status(config.BAD_REQUEST).json({
+                res.status(config.NOT_FOUND).json({
                     message: "Group not found",
                 });
             }
@@ -249,7 +248,7 @@ router.post('/add_member', function (req, res, next) {
         'id': {
             notEmpty: true,
             isMongoId: {
-                errorMessage: "Wrong Object id"
+                errorMessage: "Invalid id"
             },
             errorMessage: "group id is required"
         }
@@ -257,7 +256,7 @@ router.post('/add_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
@@ -276,7 +275,7 @@ router.post('/add_member', function (req, res, next) {
                     res.status(config.OK_STATUS).json({'message': 'Member successfully added.'});
                 });
             } else {
-                res.status(config.BAD_REQUEST).json({
+                res.status(config.NOT_FOUND).json({
                     message: "Group not found",
                 });
             }
@@ -310,7 +309,7 @@ router.post('/remove_member', function (req, res, next) {
         'id': {
             notEmpty: true,
             isMongoId: {
-                errorMessage: "Wrong Object id"
+                errorMessage: "Invalid id"
             },
             errorMessage: "group id is required"
         }
@@ -318,7 +317,7 @@ router.post('/remove_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
@@ -364,7 +363,7 @@ router.post('/exit_group', function (req, res, next) {
         'id': {
             notEmpty: true,
             isMongoId: {
-                errorMessage: "Wrong Object id"
+                errorMessage: "Invalid id"
             },
             errorMessage: "group id is required"
         }
@@ -372,7 +371,7 @@ router.post('/exit_group', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
             if (err) {
                 return next(err);
             }
@@ -388,7 +387,7 @@ router.post('/exit_group', function (req, res, next) {
                     res.status(config.OK_STATUS).json({'message': 'Exit from group successfully.'});
                 });
             } else {
-                res.status(config.BAD_REQUEST).json({
+                res.status(config.NOT_FOUND).json({
                     message: "Group not found",
                 });
             }
