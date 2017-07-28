@@ -73,7 +73,7 @@ botFunction.add = function (botJson, loginUser, callback) {
                                 message = userName + " has been invited to " + activityName + " activity.";
                             }
                             console.log("===>", userObj._id);
-                            client.publishMessage(userObj._id, { "notification": message }, function (status) {
+                            client.publishMessage(userObj._id, { "type":"bot-notification","message": message,"data":results.activityInfo }, function (status) {
                                 console.log("Notification send to " + userObj._id);
                             });
                         });
