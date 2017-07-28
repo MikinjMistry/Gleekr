@@ -2,7 +2,7 @@
   {
     "type": "POST",
     "url": "/activity/actions",
-    "title": "Add/update activity action - READY",
+    "title": "Add/update activity action",
     "name": "Add_update_activity_action",
     "description": "<p>isPinned and action should be passed alternately depending on the action which needs to be done for the activity id passed.</p>",
     "group": "Activity",
@@ -79,7 +79,7 @@
   {
     "type": "Delete",
     "url": "/activity?id=:id",
-    "title": "Delete Activity - READY",
+    "title": "Delete Activity",
     "name": "Delete_Activity",
     "group": "Activity",
     "parameter": {
@@ -141,7 +141,7 @@
   {
     "type": "get",
     "url": "/activity",
-    "title": "Get all activity - READY",
+    "title": "Get all activity",
     "name": "Get_All_activity",
     "group": "Activity",
     "header": {
@@ -239,7 +239,7 @@
   {
     "type": "get",
     "url": "/activity/details?id=:id",
-    "title": "Get activity details - READY",
+    "title": "Get activity details",
     "name": "Get_activity_details",
     "group": "Activity",
     "parameter": {
@@ -308,7 +308,7 @@
   {
     "type": "post",
     "url": "/activity",
-    "title": "Insert Activity - READY",
+    "title": "Insert Activity",
     "name": "Insert_Activity",
     "group": "Activity",
     "description": "<p>You need to pass Form Data</p>",
@@ -363,6 +363,13 @@
             "optional": false,
             "field": "location",
             "description": "<p>form-data: Activity location</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": true,
+            "field": "isPublic",
+            "description": "<p>form-data: Mark activity as private or public</p>"
           },
           {
             "group": "Parameter",
@@ -441,7 +448,7 @@
   {
     "type": "POST",
     "url": "/activity/invites",
-    "title": "Send activity invites - READY",
+    "title": "Send activity invites",
     "name": "Send_activity_invites",
     "group": "Activity",
     "parameter": {
@@ -510,7 +517,7 @@
   {
     "type": "put",
     "url": "/activity",
-    "title": "Update Activity - READY",
+    "title": "Update Activity",
     "name": "Update_Activity",
     "group": "Activity",
     "description": "<p>You need to pass Form Data</p>",
@@ -565,6 +572,13 @@
             "optional": false,
             "field": "endTime",
             "description": "<p>form-data: Activity end time, format: ISO date</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Boolean",
+            "optional": false,
+            "field": "isPublic",
+            "description": "<p>form-data: Mark activity as private or public</p>"
           },
           {
             "group": "Parameter",
@@ -708,6 +722,415 @@
     "version": "0.0.0",
     "filename": "controllers/activities.js",
     "groupTitle": "Activity"
+  },
+  {
+    "type": "post",
+    "url": "/group/add_member",
+    "title": "Add Member to Group",
+    "name": "Add_Member_to_Group",
+    "group": "Group",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Array",
+            "optional": false,
+            "field": "members",
+            "description": "<p>array of userid to add as member</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>Group id</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
+  },
+  {
+    "type": "post",
+    "url": "/group",
+    "title": "Create Group",
+    "name": "Create_Group",
+    "group": "Group",
+    "description": "<p>You need to pass Form Data</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "name",
+            "description": "<p>form-data: group name</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "file",
+            "optional": false,
+            "field": "file",
+            "description": "<p>form-data: file object [jpg,png]</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
+  },
+  {
+    "type": "delete",
+    "url": "/group?id=:id",
+    "title": "Delete Group",
+    "name": "Delete_Group",
+    "group": "Group",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>Group id</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
+  },
+  {
+    "type": "post",
+    "url": "/group/remove_member",
+    "title": "Delete member from Group",
+    "name": "Delete_member_from_Group",
+    "group": "Group",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Array",
+            "optional": false,
+            "field": "members",
+            "description": "<p>array of userid to add as member</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>Group id</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
+  },
+  {
+    "type": "post",
+    "url": "/group/exit_group",
+    "title": "Exit from Group",
+    "name": "Exit_from_Group",
+    "group": "Group",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>Group id</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
+  },
+  {
+    "type": "put",
+    "url": "/group",
+    "title": "Update Group",
+    "name": "Update_Group",
+    "group": "Group",
+    "description": "<p>You need to pass Form Data</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "id",
+            "description": "<p>form-data: group id that is going to update</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "name",
+            "description": "<p>form-data: group name</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "file",
+            "optional": false,
+            "field": "file",
+            "description": "<p>form-data: file object [jpg,png]</p>"
+          }
+        ]
+      }
+    },
+    "header": {
+      "fields": {
+        "Header": [
+          {
+            "group": "Header",
+            "type": "String",
+            "optional": false,
+            "field": "x-access-token",
+            "description": "<p>Users unique access-key</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Success 200": [
+          {
+            "group": "Success 200",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Success message.</p>"
+          }
+        ]
+      }
+    },
+    "error": {
+      "fields": {
+        "Error 4xx": [
+          {
+            "group": "Error 4xx",
+            "type": "String",
+            "optional": false,
+            "field": "message",
+            "description": "<p>Validation or error message.</p>"
+          }
+        ]
+      }
+    },
+    "version": "0.0.0",
+    "filename": "controllers/group.js",
+    "groupTitle": "Group"
   },
   {
     "type": "post",
