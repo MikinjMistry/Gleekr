@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
+var request = require('request');
 
 var Activity = require("../models/activity");
 var User = require("../models/user");
@@ -34,31 +35,28 @@ router.post('/import', function (req, res, next) {
         var file = req.files.file;
         var dir = "./upload/" + req.userInfo.id + '/backup';
         var parentdir = "./upload/" + req.userInfo.id;
-//            var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
-//            if (mimetype.indexOf(file.mimetype) != -1) {
-        if (!fs.existsSync(parentdir)) {
-            fs.mkdirSync(parentdir);
-        }
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir);
-        } else {
-            deleteFolderRecursive(dir);
-        }
-
-        extention = path.extname(file.name);
-        filename = "backup-" + new Date().getTime() + extention;
-        file.mv(dir + '/' + filename, function (err) {
-            if (err) {
-                return next(err);
-            } else {
-//                        imagepath = "/upload/" + userInfo.id + "/" + filename;
-//                        json.image = imagepath;
-                res.status(config.OK_STATUS).json({message: 'Chat file imported successfully.'});
+        var mimetype = ['text/plain'];
+        if (mimetype.indexOf(file.mimetype) != -1) {
+            if (!fs.existsSync(parentdir)) {
+                fs.mkdirSync(parentdir);
             }
-        });
-//            } else {
-//                res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
-//            }
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir);
+            } else {
+                deleteFolderRecursive(dir);
+            }
+            extention = path.extname(file.name);
+            filename = "backup-" + new Date().getTime() + extention;
+            file.mv(dir + '/' + filename, function (err) {
+                if (err) {
+                    return next(err);
+                } else {
+                    res.status(config.OK_STATUS).json({message: 'Chat file imported successfully.'});
+                }
+            });
+        } else {
+            res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
+        }
     } else {
         res.status(config.BAD_REQUEST).json({
             message: "Please select file first.",
@@ -77,13 +75,14 @@ router.post('/import', function (req, res, next) {
  */
 router.get('/export', function (req, res, next) {
     var dir = "./upload/" + req.userInfo.id + '/backup';
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach(function (file, index) {
-            var filepath = path + "/" + file;
-            res.download(filepath);
+    if (fs.existsSync(dir)) {
+        fs.readdirSync(dir).forEach(function (file, index) {
+            var filepath = dir + "/" + file;
+            obj = fs.readFileSync(filepath);
+            res.send(new Buffer(obj).toString('base64'));
         });
     } else {
-        res.status(config.BAD_REQUEST).json({message:'Sorry! You haven\'t import any file.'});
+        res.status(config.BAD_REQUEST).json({message: 'Sorry! You haven\'t import any file.'});
     }
 });
 var deleteFolderRecursive = function (path) {
