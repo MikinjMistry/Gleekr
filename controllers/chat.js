@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
-var rmdir = require('rmdir');
 
 var Activity = require("../models/activity");
 var User = require("../models/user");
@@ -38,21 +37,19 @@ router.post('/import', function (req, res, next) {
         json.user_id = userInfo.id;
         if (req.files) {
             var file = req.files.file;
-            console.log('file', file);
             var dir = "./upload/" + userInfo.id + '/backup';
+            var parentdir = "./upload/" + userInfo.id;
 //            var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
 //            if (mimetype.indexOf(file.mimetype) != -1) {
+            if (!fs.existsSync(parentdir)) {
+                fs.mkdirSync(parentdir);
+            } 
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir);
             } else {
-                async.parallel({
-                    removedir: function (callback) {
-                        deleteFolderRecursive(dir, callback);
-                    }
-                }, function (err, result) {
-                    fs.mkdirSync(dir);
-                });
+                deleteFolderRecursive(dir);
             }
+            
             extention = path.extname(file.name);
             filename = "backup-" + new Date().getTime() + extention;
             file.mv(dir + '/' + filename, function (err) {
@@ -79,19 +76,17 @@ router.post('/import', function (req, res, next) {
         });
     }
 });
-var deleteFolderRecursive = function(path, callback) {
-  if( fs.existsSync(path) ) {
-    fs.readdirSync(path).forEach(function(file,index){
-      var curPath = path + "/" + file;
-      if(fs.lstatSync(curPath).isDirectory()) { // recurse
-        deleteFolderRecursive(curPath);
-      } else { // delete file
-        fs.unlinkSync(curPath);
-      }
-    });
-    fs.rmdirSync(path);
-    callback(null);
-  }
+var deleteFolderRecursive = function (path) {
+    if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach(function (file, index) {
+            var curPath = path + "/" + file;
+            if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+    }
 };
 
 module.exports = router;
