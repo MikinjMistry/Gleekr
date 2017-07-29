@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
+var async = require('async');
 
 var Group = require("../models/group");
 var User = require("../models/user");
@@ -8,6 +9,8 @@ var User = require("../models/user");
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+
+var client = require("../mqtt/mqttClient");
 
 /**
  * @api {post} /group Create Group
@@ -261,9 +264,11 @@ router.post('/add_member', function (req, res, next) {
                 return next(err);
             }
             if (groupData) {
+				
                 var arr = _.map(req.body.members, function (val) {
                     return {'user_id': val};
                 });
+				
                 Group.findOneAndUpdate({_id: req.body.id}, {
                     $pushAll: {
                         'members': arr
@@ -272,7 +277,55 @@ router.post('/add_member', function (req, res, next) {
                     if (err) {
                         return next(err);
                     }
-                    res.status(config.OK_STATUS).json({'message': 'Member successfully added.'});
+					
+					async.waterfall([
+						function(callback){
+							Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+								if (!err) {
+									if(groupData && groupData.members.length > 0){
+										callback(null,_.pluck(groupData.members,'user_id'))
+									} else {
+										callback("No group member available");
+									}
+								}
+								else{
+									callback("Error in finding group members");
+								}
+							});
+						},
+						function(group_members,callback){
+							
+							async.eachSeries(arr,function(member,loop_callback){
+						
+								// Fetch info about new joined user
+								User.findOne({ _id: member.user_id }, function (err, userData) {
+									if (!err) {
+										// Send notification for each member
+										var username = userData.mobileNo;
+										if(userData.name){
+											username = userData.name;
+										}
+										
+										// Send notification to each member
+										_.each(group_members,function(member){
+											client.publishMessage(member, 
+												{"type":"group-notification",
+												"message":username+" has been added in group "+groupData.name,
+												data:groupData}, 
+												function (status) {
+													console.log("Notification send to " + member);
+											});
+										});
+									}
+									loop_callback();
+								});
+							},function(err){
+								callback(null);
+							});
+						}
+					],function(err,result){
+						res.status(config.OK_STATUS).json({'message': 'Member successfully added.'});
+					});
                 });
             } else {
                 res.status(config.NOT_FOUND).json({
@@ -399,4 +452,5 @@ router.post('/exit_group', function (req, res, next) {
         });
     }
 });
+
 module.exports = router;
