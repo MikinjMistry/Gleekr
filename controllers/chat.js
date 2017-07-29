@@ -38,6 +38,7 @@ router.post('/import', function (req, res, next) {
         json.user_id = userInfo.id;
         if (req.files) {
             var file = req.files.file;
+            console.log('file', file);
             var dir = "./upload/" + userInfo.id + '/backup';
 //            var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
 //            if (mimetype.indexOf(file.mimetype) != -1) {
@@ -46,12 +47,9 @@ router.post('/import', function (req, res, next) {
             } else {
                 async.parallel({
                     removedir: function (callback) {
-                        rmdir(dir, function (err, dirs, files) {
-                            callback(null, files);
-                        });
+                        deleteFolderRecursive(dir, callback);
                     }
                 }, function (err, result) {
-                    console.log('directory removed');
                     fs.mkdirSync(dir);
                 });
             }
@@ -81,6 +79,19 @@ router.post('/import', function (req, res, next) {
         });
     }
 });
-
+var deleteFolderRecursive = function(path, callback) {
+  if( fs.existsSync(path) ) {
+    fs.readdirSync(path).forEach(function(file,index){
+      var curPath = path + "/" + file;
+      if(fs.lstatSync(curPath).isDirectory()) { // recurse
+        deleteFolderRecursive(curPath);
+      } else { // delete file
+        fs.unlinkSync(curPath);
+      }
+    });
+    fs.rmdirSync(path);
+    callback(null);
+  }
+};
 
 module.exports = router;
