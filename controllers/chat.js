@@ -82,6 +82,8 @@ router.get('/export', function (req, res, next) {
             var filepath = path + "/" + file;
             res.download(filepath);
         });
+    } else {
+        res.status(config.BAD_REQUEST).json({message:'Sorry! You haven\'t import any file.'});
     }
 });
 var deleteFolderRecursive = function (path) {
