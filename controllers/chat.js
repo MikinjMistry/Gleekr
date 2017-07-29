@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
-var request = require('request');
 
 var Activity = require("../models/activity");
 var User = require("../models/user");

@@ -29,7 +29,6 @@
     "mqtt": "^2.8.2",
     "node-cron": "^1.2.0",
     "path": "^0.12.7",
-    "request": "^2.81.0",
     "serve-favicon": "~2.3.0",
     "twilio": "^3.3.0",
     "underscore": "^1.8.3"
