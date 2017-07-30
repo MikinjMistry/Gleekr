@@ -384,7 +384,55 @@ router.post('/remove_member', function (req, res, next) {
                     if (err) {
                         return next(err);
                     }
-                    res.status(config.OK_STATUS).json({'message': 'Member successfully removed.'});
+					
+					async.waterfall([
+						function(callback){
+							Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+								if (!err) {
+									if(groupData && groupData.members.length > 0){
+										callback(null,_.pluck(groupData.members,'user_id'))
+									} else {
+										callback("No group member available");
+									}
+								}
+								else{
+									callback("Error in finding group members");
+								}
+							});
+						},
+						function(group_members,callback){
+							
+							async.eachSeries(req.body.members,function(user,loop_callback){
+						
+								// Fetch info about new joined user
+								User.findOne({ _id: user }, function (err, userData) {
+									if (!err) {
+										// Send notification for each member
+										var username = userData.mobileNo;
+										if(userData.name){
+											username = userData.name;
+										}
+										
+										// Send notification to each member
+										_.each(group_members,function(member){
+											client.publishMessage(member, 
+												{"type":"group-notification",
+												"message":username+" has removed from group "+groupData.name,
+												data:groupData}, 
+												function (status) {
+													console.log("Notification send to " + member);
+											});
+										});
+									}
+									loop_callback();
+								});
+							},function(err){
+								callback(null);
+							});
+						}
+					],function(err,result){
+						res.status(config.OK_STATUS).json({'message': 'Member successfully removed.'});
+					});
                 });
 
             } else {
@@ -438,6 +486,29 @@ router.post('/exit_group', function (req, res, next) {
                     if (err) {
                         return next(err);
                     }
+					
+					
+					User.findOne({ _id: req.userInfo.id }, function (err, userData) {
+						if (!err) {
+							// Send notification for each member
+							var username = userData.mobileNo;
+							if(userData.name){
+								username = userData.name;
+							}
+							
+							// Send notification to each member
+							_.each(groupData.members,function(member){
+								client.publishMessage(member.user_id, 
+									{"type":"group-notification",
+									"message":username+" has removed from group "+groupData.name,
+									data:groupData}, 
+									function (status) {
+										console.log("Notification send to " + member.user_id);
+								});
+							});
+						}
+					});
+
                     res.status(config.OK_STATUS).json({'message': 'Exit from group successfully.'});
                 });
             } else {
