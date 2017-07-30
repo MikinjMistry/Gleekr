@@ -54,7 +54,7 @@ router.put('/', function (req, res, next) {
                 fs.mkdirSync(dir);
             }
             extention = path.extname(file.name);
-            filename = new Date().getTime() + extention;
+            filename = "profile_"+userInfo.id+".jpg";
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
                     return next(err);

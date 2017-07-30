@@ -73,6 +73,7 @@ router.post('/', function (req, res, next) {
             var groupObject = new Group(json);
             groupObject.save(function (err, groupData) {
                 if (err) {
+                    console.log("err:",err);
                     return next(err);
                 } else {
                     res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
