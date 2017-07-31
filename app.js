@@ -58,6 +58,7 @@ app.use(require('./controllers'));
 app.use(function (req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
+    console.log("error:",err);
     next(err);
 });
 
@@ -79,7 +80,7 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
     res.status(err.status || 500);
-    console.log("error:",err)
+    console.log("error:",err);
     res.json({
         message: err.message
     });

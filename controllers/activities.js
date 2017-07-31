@@ -277,25 +277,29 @@ router.post('/', function (req, res, next) {
 
     var errors = req.validationErrors();
     if (!errors) {
-
+        var userInfo = req.userInfo;
         var json = req.body;
 
         json.user_id = req.userInfo.id;
 
         if (req.files) {
             var file = req.files.file;
-            var dir = "./upload/activity";
+            var dir = "./upload/" + userInfo.id;
+            var activityDir = "./upload/" + userInfo.id + "/activity";
             if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) !== -1) {
                 if (!fs.existsSync(dir)) {
                     fs.mkdirSync(dir);
                 }
+                if (!fs.existsSync(activityDir)) {
+                    fs.mkdirSync(activityDir);
+                }
                 extention = path.extname(file.name);
-                filename = new Date().getTime() + extention;
-                file.mv(dir + '/' + filename, function (err) {
+                filename = "activity_" + new Date().getTime() + extention;
+                file.mv(activityDir + '/' + filename, function (err) {
                     if (err) {
                         return next(err);
                     } else {
-                        json.photo = "/upload/activity/" + filename;
+                        json.photo = "/upload/" + userInfo.id + "/activity/" + filename;
                         insertActivity(json, req, res)
                     }
                 });
@@ -366,6 +370,7 @@ router.put('/', function (req, res, next) {
 
     var errors = req.validationErrors();
     if (!errors) {
+        var userInfo = req.userInfo;
         var json = req.body;
         Activity.findOne({_id: req.body.id, isDeleted: {$ne: true}}, function (err, activityData) {
             if (err) {
@@ -374,19 +379,23 @@ router.put('/', function (req, res, next) {
             if (activityData) {
                 if (req.files && req.files.file) {
                     var file = req.files.file;
-                    var dir = "./upload/activity";
+                    var dir = "./upload/" + userInfo.id;
+                    var activityDir = "./upload/" + userInfo.id + "/activity";
                     if (['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'].indexOf(file.mimetype) != -1) {
                         if (!fs.existsSync(dir)) {
                             fs.mkdirSync(dir);
                         }
+                        if (!fs.existsSync(activityDir)) {
+                            fs.mkdirSync(activityDir);
+                        }
                         extention = path.extname(file.name);
-                        filename = new Date().getTime() + extention;
-                        file.mv(dir + '/' + filename, function (err) {
+                        filename = "activity_"+new Date().getTime() + extention;
+                        file.mv(activityDir + '/' + filename, function (err) {
                             if (err) {
                                 return next(err);
                             } else {
                                 if (activityData.photo) {
-                                    var oldImage = "."+activityData.photo;
+                                    var oldImage = "." + activityData.photo;
                                     if (fs.existsSync(oldImage)) {
                                         fs.unlinkSync(oldImage);
                                     }
@@ -395,7 +404,7 @@ router.put('/', function (req, res, next) {
                                 if (req.body) {
                                     data = req.body;
                                 }
-                                data.photo = "/upload/activity/" + filename;
+                                json.photo = "/upload/" + userInfo.id + "/activity/" + filename;
                                 updateActivity(req.body.id, data, req, res);
                             }
                         });
@@ -941,8 +950,8 @@ function insertActivity(objData, req, res) {
 
     activityObject.save(function (err, acitivityData) {
         if (err) {
-            console.log("next:",err);
-            
+            console.log("next:", err);
+
             return next(err);
         } else {
             // Add action in bot

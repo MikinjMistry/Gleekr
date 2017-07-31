@@ -43,19 +43,22 @@ router.post('/', function (req, res, next) {
         if (req.files) {
             var file = req.files.file;
             var dir = "./upload/" + userInfo.id;
+            var groupDir = "./upload/" + userInfo.id+"/group";
             var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
             if (mimetype.indexOf(file.mimetype) != -1) {
                 if (!fs.existsSync(dir)) {
                     fs.mkdirSync(dir);
                 }
+                if (!fs.existsSync(groupDir)) {
+                    fs.mkdirSync(groupDir);
+                }
                 extention = path.extname(file.name);
-                filename = new Date().getTime() + extention;
-                file.mv(dir + '/' + filename, function (err) {
+                filename = "group_"+new Date().getTime()+extention;
+                file.mv(groupDir + '/' + filename, function (err) {
                     if (err) {
                         return next(err);
                     } else {
-                        imagepath = "/upload/" + userInfo.id + "/" + filename;
-                        json.image = imagepath;
+                        json.image = '/upload/'+userInfo.id+'/group/'+filename;
                         var groupObject = new Group(json);
                         groupObject.save(function (err, groupData) {
                             if (err) {
@@ -73,7 +76,6 @@ router.post('/', function (req, res, next) {
             var groupObject = new Group(json);
             groupObject.save(function (err, groupData) {
                 if (err) {
-                    console.log("err:",err);
                     return next(err);
                 } else {
                     res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
@@ -128,19 +130,28 @@ router.put('/', function (req, res, next) {
                 if (req.files) {
                     var file = req.files.file;
                     var dir = "./upload/" + userInfo.id;
+                    var groupDir = "./upload/" + userInfo.id+"/group";
                     var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
                     if (mimetype.indexOf(file.mimetype) != -1) {
                         if (!fs.existsSync(dir)) {
                             fs.mkdirSync(dir);
                         }
+                        if (!fs.existsSync(groupDir)) {
+                            fs.mkdirSync(groupDir);
+                        }
                         extention = path.extname(file.name);
-                        filename = new Date().getTime() + extention;
-                        file.mv(dir + '/' + filename, function (err) {
+                        filename = "group_"+new Date().getTime()+extention;
+                        file.mv(groupDir + '/' + filename, function (err) {
                             if (err) {
                                 return next(err);
                             } else {
-                                imagepath = "/upload/" + userInfo.id + "/" + filename;
-                                json.image = imagepath;
+                                if(groupData.image){
+                                    var oldImage = "."+groupData.image;
+                                    if (fs.existsSync(oldImage)) {
+                                        fs.unlinkSync(oldImage);
+                                    }
+                                }
+                                json.image = '/upload/'+userInfo.id+'/group/'+filename;
                                 Group.update({_id: {$eq: id}}, {$set: json}, function (err, response) {
                                     if (err) {
                                         return next(err);
