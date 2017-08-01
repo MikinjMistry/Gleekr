@@ -43,7 +43,7 @@ router.post('/', function (req, res, next) {
         if (req.files) {
             var file = req.files.file;
             var dir = "./upload/" + userInfo.id;
-            var groupDir = "./upload/" + userInfo.id+"/group";
+            var groupDir = "./upload/" + userInfo.id + "/group";
             var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
             if (mimetype.indexOf(file.mimetype) != -1) {
                 if (!fs.existsSync(dir)) {
@@ -53,24 +53,36 @@ router.post('/', function (req, res, next) {
                     fs.mkdirSync(groupDir);
                 }
                 extention = path.extname(file.name);
-                filename = "group_"+new Date().getTime()+extention;
+                filename = "group_" + new Date().getTime() + extention;
                 file.mv(groupDir + '/' + filename, function (err) {
                     if (err) {
                         return next(err);
                     } else {
-                        json.image = '/upload/'+userInfo.id+'/group/'+filename;
+                        json.image = '/upload/' + userInfo.id + '/group/' + filename;
+                        json.members = [];
+                        json.members.push({ user_id: userInfo.id });
                         var groupObject = new Group(json);
                         groupObject.save(function (err, groupData) {
                             if (err) {
                                 return next(err);
                             } else {
-                                res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
+                                User.findOne({ _id: req.userInfo.id, isDeleted: { $ne: true } }, { name: 1 }, function (error, userData) {
+                                    if (error) {
+                                        return next(error);
+                                    }
+                                    if (userData) {
+                                        var groupDetails = Object.assign({}, groupData.toObject());
+                                        groupDetails.members[0].name = userData.name;
+                                        delete groupDetails.members[0]._id;
+                                        res.status(config.OK_STATUS).json({ message: 'Group created successfully.', group: _.omit(groupDetails, "pinnedItems", "chatMessages") });
+                                    }
+                                });
                             }
                         });
                     }
                 });
             } else {
-                res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
+                res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
             }
         } else {
             var groupObject = new Group(json);
@@ -78,7 +90,7 @@ router.post('/', function (req, res, next) {
                 if (err) {
                     return next(err);
                 } else {
-                    res.status(config.OK_STATUS).json({message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages")});
+                    res.status(config.OK_STATUS).json({ message: 'Group created successfully.', group: _.omit(groupData.toObject(), "pinnedItems", "chatMessages") });
                 }
             });
         }
@@ -118,7 +130,7 @@ router.put('/', function (req, res, next) {
     var errors = req.validationErrors();
 
     if (!errors) {
-        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
             if (err) {
                 return next(err);
             }
@@ -130,7 +142,7 @@ router.put('/', function (req, res, next) {
                 if (req.files) {
                     var file = req.files.file;
                     var dir = "./upload/" + userInfo.id;
-                    var groupDir = "./upload/" + userInfo.id+"/group";
+                    var groupDir = "./upload/" + userInfo.id + "/group";
                     var mimetype = ['image/png', 'image/jpeg', 'image/jpeg', 'image/jpg'];
                     if (mimetype.indexOf(file.mimetype) != -1) {
                         if (!fs.existsSync(dir)) {
@@ -140,36 +152,36 @@ router.put('/', function (req, res, next) {
                             fs.mkdirSync(groupDir);
                         }
                         extention = path.extname(file.name);
-                        filename = "group_"+new Date().getTime()+extention;
+                        filename = "group_" + new Date().getTime() + extention;
                         file.mv(groupDir + '/' + filename, function (err) {
                             if (err) {
                                 return next(err);
                             } else {
-                                if(groupData.image){
-                                    var oldImage = "."+groupData.image;
+                                if (groupData.image) {
+                                    var oldImage = "." + groupData.image;
                                     if (fs.existsSync(oldImage)) {
                                         fs.unlinkSync(oldImage);
                                     }
                                 }
-                                json.image = '/upload/'+userInfo.id+'/group/'+filename;
-                                Group.update({_id: {$eq: id}}, {$set: json}, function (err, response) {
+                                json.image = '/upload/' + userInfo.id + '/group/' + filename;
+                                Group.update({ _id: { $eq: id } }, { $set: json }, function (err, response) {
                                     if (err) {
                                         return next(err);
                                     } else {
-                                        res.status(config.OK_STATUS).json({message: "Group updated successfully"});
+                                        res.status(config.OK_STATUS).json({ message: "Group updated successfully" });
                                     }
                                 });
                             }
                         });
                     } else {
-                        res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
+                        res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
                     }
                 } else {
-                    Group.update({_id: {$eq: id}}, {$set: json}, function (err, response) {
+                    Group.update({ _id: { $eq: id } }, { $set: json }, function (err, response) {
                         if (err) {
                             return next(err);
                         } else {
-                            res.status(config.OK_STATUS).json({message: "Group updated successfully"});
+                            res.status(config.OK_STATUS).json({ message: "Group updated successfully" });
                         }
                     });
                 }
@@ -212,12 +224,12 @@ router.delete('/', function (req, res, next) {
     req.checkQuery(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.query.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({ _id: { $eq: req.query.id }, isDeleted: { $ne: true } }, function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
-                Group.update({_id: {$eq: req.query.id}}, {$set: {isDeleted: true}}, function (err, response) {
+                Group.update({ _id: { $eq: req.query.id } }, { $set: { isDeleted: true } }, function (err, response) {
                     if (err) {
                         return next(err);
                     } else {
@@ -271,17 +283,17 @@ router.post('/add_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
-				
+
                 var arr = _.map(req.body.members, function (val) {
-                    return {'user_id': val};
+                    return { 'user_id': val };
                 });
-				
-                Group.findOneAndUpdate({_id: req.body.id}, {
+
+                Group.findOneAndUpdate({ _id: req.body.id }, {
                     $pushAll: {
                         'members': arr
                     }
@@ -289,55 +301,57 @@ router.post('/add_member', function (req, res, next) {
                     if (err) {
                         return next(err);
                     }
-					
-					async.waterfall([
-						function(callback){
-							Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
-								if (!err) {
-									if(groupData && groupData.members.length > 0){
-										callback(null,_.pluck(groupData.members,'user_id'))
-									} else {
-										callback("No group member available");
-									}
-								}
-								else{
-									callback("Error in finding group members");
-								}
-							});
-						},
-						function(group_members,callback){
-							
-							async.eachSeries(arr,function(member,loop_callback){
-						
-								// Fetch info about new joined user
-								User.findOne({ _id: member.user_id }, function (err, userData) {
-									if (!err) {
-										// Send notification for each member
-										var username = userData.mobileNo;
-										if(userData.name){
-											username = userData.name;
-										}
-										
-										// Send notification to each member
-										_.each(group_members,function(member){
-											client.publishMessage(member, 
-												{"type":"group-notification",
-												"message":username+" has been added in group "+groupData.name,
-												data:groupData}, 
-												function (status) {
-													console.log("Notification send to " + member);
-											});
-										});
-									}
-									loop_callback();
-								});
-							},function(err){
-								callback(null);
-							});
-						}
-					],function(err,result){
-						res.status(config.OK_STATUS).json({'message': 'Member successfully added.'});
-					});
+
+                    async.waterfall([
+                        function (callback) {
+                            Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+                                if (!err) {
+                                    if (groupData && groupData.members.length > 0) {
+                                        callback(null, _.pluck(groupData.members, 'user_id'))
+                                    } else {
+                                        callback("No group member available");
+                                    }
+                                }
+                                else {
+                                    callback("Error in finding group members");
+                                }
+                            });
+                        },
+                        function (group_members, callback) {
+
+                            async.eachSeries(arr, function (member, loop_callback) {
+
+                                // Fetch info about new joined user
+                                User.findOne({ _id: member.user_id }, function (err, userData) {
+                                    if (!err) {
+                                        // Send notification for each member
+                                        var username = userData.mobileNo;
+                                        if (userData.name) {
+                                            username = userData.name;
+                                        }
+
+                                        // Send notification to each member
+                                        _.each(group_members, function (member) {
+                                            client.publishMessage(member,
+                                                {
+                                                    type: "group-notification",
+                                                    message: username + " has been added in group " + groupData.name,
+                                                    data: groupData
+                                                },
+                                                function (status) {
+                                                    console.log("Notification send to " + member);
+                                                });
+                                        });
+                                    }
+                                    loop_callback();
+                                });
+                            }, function (err) {
+                                callback(null);
+                            });
+                        }
+                    ], function (err, result) {
+                        res.status(config.OK_STATUS).json({ 'message': 'Member successfully added.' });
+                    });
                 });
             } else {
                 res.status(config.NOT_FOUND).json({
@@ -382,68 +396,70 @@ router.post('/remove_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
-                Group.findOneAndUpdate({_id: req.body.id}, {
+                Group.findOneAndUpdate({ _id: req.body.id }, {
                     $pull: {
-                        'members': {'user_id': {'$in': req.body.members}}
+                        'members': { 'user_id': { '$in': req.body.members } }
                     }
                 }, function (err, data) {
                     if (err) {
                         return next(err);
                     }
-					
-					async.waterfall([
-						function(callback){
-							Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
-								if (!err) {
-									if(groupData && groupData.members.length > 0){
-										callback(null,_.pluck(groupData.members,'user_id'))
-									} else {
-										callback("No group member available");
-									}
-								}
-								else{
-									callback("Error in finding group members");
-								}
-							});
-						},
-						function(group_members,callback){
-							
-							async.eachSeries(req.body.members,function(user,loop_callback){
-						
-								// Fetch info about new joined user
-								User.findOne({ _id: user }, function (err, userData) {
-									if (!err) {
-										// Send notification for each member
-										var username = userData.mobileNo;
-										if(userData.name){
-											username = userData.name;
-										}
-										
-										// Send notification to each member
-										_.each(group_members,function(member){
-											client.publishMessage(member, 
-												{"type":"group-notification",
-												"message":username+" has removed from group "+groupData.name,
-												data:groupData}, 
-												function (status) {
-													console.log("Notification send to " + member);
-											});
-										});
-									}
-									loop_callback();
-								});
-							},function(err){
-								callback(null);
-							});
-						}
-					],function(err,result){
-						res.status(config.OK_STATUS).json({'message': 'Member successfully removed.'});
-					});
+
+                    async.waterfall([
+                        function (callback) {
+                            Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+                                if (!err) {
+                                    if (groupData && groupData.members.length > 0) {
+                                        callback(null, _.pluck(groupData.members, 'user_id'))
+                                    } else {
+                                        callback("No group member available");
+                                    }
+                                }
+                                else {
+                                    callback("Error in finding group members");
+                                }
+                            });
+                        },
+                        function (group_members, callback) {
+
+                            async.eachSeries(req.body.members, function (user, loop_callback) {
+
+                                // Fetch info about new joined user
+                                User.findOne({ _id: user }, function (err, userData) {
+                                    if (!err) {
+                                        // Send notification for each member
+                                        var username = userData.mobileNo;
+                                        if (userData.name) {
+                                            username = userData.name;
+                                        }
+
+                                        // Send notification to each member
+                                        _.each(group_members, function (member) {
+                                            client.publishMessage(member,
+                                                {
+                                                    type: "group-notification",
+                                                    message: username + " has removed from group " + groupData.name,
+                                                    data: groupData
+                                                },
+                                                function (status) {
+                                                    console.log("Notification send to " + member);
+                                                });
+                                        });
+                                    }
+                                    loop_callback();
+                                });
+                            }, function (err) {
+                                callback(null);
+                            });
+                        }
+                    ], function (err, result) {
+                        res.status(config.OK_STATUS).json({ 'message': 'Member successfully removed.' });
+                    });
                 });
 
             } else {
@@ -484,43 +500,45 @@ router.post('/exit_group', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({_id:{$eq: req.body.id}, isDeleted: {$ne: true}}, function (err, groupData) {
+        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
-                Group.findOneAndUpdate({_id: req.body.id}, {
+                Group.findOneAndUpdate({ _id: req.body.id }, {
                     $pull: {
-                        'members': {'user_id': {'$eq': req.userInfo.id}}
+                        'members': { 'user_id': { '$eq': req.userInfo.id } }
                     }
                 }, function (err, data) {
                     if (err) {
                         return next(err);
                     }
-					
-					
-					User.findOne({ _id: req.userInfo.id }, function (err, userData) {
-						if (!err) {
-							// Send notification for each member
-							var username = userData.mobileNo;
-							if(userData.name){
-								username = userData.name;
-							}
-							
-							// Send notification to each member
-							_.each(groupData.members,function(member){
-								client.publishMessage(member.user_id, 
-									{"type":"group-notification",
-									"message":username+" has removed from group "+groupData.name,
-									data:groupData}, 
-									function (status) {
-										console.log("Notification send to " + member.user_id);
-								});
-							});
-						}
-					});
 
-                    res.status(config.OK_STATUS).json({'message': 'Exit from group successfully.'});
+
+                    User.findOne({ _id: req.userInfo.id }, function (err, userData) {
+                        if (!err) {
+                            // Send notification for each member
+                            var username = userData.mobileNo;
+                            if (userData.name) {
+                                username = userData.name;
+                            }
+
+                            // Send notification to each member
+                            _.each(groupData.members, function (member) {
+                                client.publishMessage(member.user_id,
+                                    {
+                                        type: "group-notification",
+                                        message: username + " has removed from group " + groupData.name,
+                                        data: groupData
+                                    },
+                                    function (status) {
+                                        console.log("Notification send to " + member.user_id);
+                                    });
+                            });
+                        }
+                    });
+
+                    res.status(config.OK_STATUS).json({ 'message': 'Exit from group successfully.' });
                 });
             } else {
                 res.status(config.NOT_FOUND).json({

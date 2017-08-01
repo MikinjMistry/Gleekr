@@ -24,7 +24,7 @@ var jwt = require('jsonwebtoken');
 /**
  * @api {put} /user Update user profile
  * @apiName Update Profile
- * @apiGroup User - READY
+ * @apiGroup User 
  * @apiDescription You need to pass Form Data
  * 
  * @apiParam {String} name  form-data: full name of the user
@@ -35,6 +35,7 @@ var jwt = require('jsonwebtoken');
  * @apiParam {String} city form-data:city
  * @apiParam {String} state form-data:state
  * @apiParam {String} country form-data:country
+ * @apiParam {String} [deviceToken] form-data:Device token for IOS
  * @apiParam {file} file form-data: file object [jpg,png]
  *  
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -54,7 +55,7 @@ router.put('/', function (req, res, next) {
                 fs.mkdirSync(dir);
             }
             extention = path.extname(file.name);
-            filename = "profile_"+userInfo.id+".jpg";
+            filename = "profile_" + userInfo.id + ".jpg";
             file.mv(dir + '/' + filename, function (err) {
                 if (err) {
                     return next(err);
@@ -80,7 +81,7 @@ router.put('/', function (req, res, next) {
 /**
  * @api {delete} /user Delete user account
  * @apiName Delete User Account
- * @apiGroup User - READY
+ * @apiGroup User 
  *
  * @apiHeader {String}  Content-Type application/json
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -104,7 +105,7 @@ router.delete('/', function (req, res, next) {
 /**
  * @api {post} /user/change_number Change phone number
  * @apiName Change Number
- * @apiGroup User - READY
+ * @apiGroup User 
  * 
  * @apiParam {String} newMobileNo New phone number on which OTP will be sent
  * 
@@ -203,7 +204,7 @@ router.post('/change_number', function (req, res, next) {
 /**
  * @api {post} /user/verifyotp verify OTP for new number
  * @apiName Verify OTP for change number
- * @apiGroup User - READY
+ * @apiGroup User 
  * 
  * @apiParam {String} mobileNo New phone number on which OTP has been sent
  * @apiParam {String} otp OTP recevied by user
@@ -296,7 +297,7 @@ router.post('/verifyotp', function (req, res, next) {
 /**
  * @api {post} /user/send_card Send user's contact card
  * @apiName Send Contact Card
- * @apiGroup User - READY
+ * @apiGroup User 
  * @apiDescription SMS will be send to Phone Contacts [Done]
  * @apiDescription Gleekr in-app message will be send to Gleekr contacts [Will be covered with chat integration]
  * 
@@ -355,7 +356,7 @@ router.post('/send_card', function (req, res, next) {
 /**
  * @api {get} /user Get User profile
  * @apiName User Profile Information
- * @apiGroup User - READY
+ * @apiGroup User 
  *
  * @apiHeader {String}  Content-Type application/json
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -396,7 +397,7 @@ router.get('/', function (req, res, next) {
 /**
  * @api {post} /user/sync_contacts Sync contacts
  * @apiName Sync Contacts
- * @apiGroup User - READY
+ * @apiGroup User
  * 
  * @apiParam {Array} contacts raw data : Array of objects [{mobileNo: contact_no, firstName: first_name, lastName: last_name, email: email }]
  * 
@@ -450,36 +451,48 @@ router.post('/sync_contacts', function (req, res, next) {
                     Contact.remove({ 'user_id': req.userInfo.id }, function (error, delete_result) {
                         if (error) {
                             callback(error);
-                        }
-                        if (delete_result['result']['ok']) {
-                            Contact.insertMany(contacts, function (error, data) {
-                                if (error) {
-                                    callback(error);
-                                }
-                                callback(null, data);
-                            });
+                        } else {
+                            if (delete_result['result']['ok']) {
+                                Contact.insertMany(contacts, function (error, data) {
+                                    if (error) {
+                                        callback(error);
+                                    } else {
+                                        callback(null, data);
+                                    }
+                                });
+                            }
                         }
                     })
                 },
                 getUserGroup: function (callback) {
                     //Get user's group
-                    Group.find({ "members._id": { "$in": _.pluck(responseData.gleekrUser, "_id") }, isDeleted: { $ne: true } }, function (error, groups) {
-                        if (error) {
-                            callback(error);
-                        }
-                        if (groups && groups.length > 0) {
-                            responseData.gleekrGroups = groups;
-                        }
-                        callback(null, responseData);
-                    });
+                    Group.find({ "members": { $elemMatch: { "user_id": { $eq: req.userInfo.id } } }, isDeleted: { $ne: true } })
+                        .populate({ path: "members.user_id", select: "name", $elemMatch: { "isDeleted": { $ne: true } } })
+                        .exec(function (error, groups) {
+                            if (error) {
+                                callback(error);
+                            } else {
+                                if (groups && groups.length > 0) {
+                                    var groupsData = [];
+                                    _.each(groups, function (group) {
+                                        var temp = Object.assign({}, group.toObject());
+                                        temp.members = _.chain(group.members).map(function (item) { return { userName: item.user_id.name, user_id: item.user_id._id, createdAt: item.createdAt }; }).value();
+                                        groupsData.push(temp);
+                                    });
+                                    responseData.gleekrGroups = groupsData;
 
+                                }
+                                callback(null, responseData);
+                            }
+
+                        });
                 }
             }, function (err, results) {
                 if (err) {
                     return next(err);
                 }
                 //Send sync_contacts response
-                res.status(config.OK_STATUS).json(results.getUserGroup);
+                res.status(config.OK_STATUS).json(responseData);
             });
         });
 
@@ -492,7 +505,7 @@ router.post('/sync_contacts', function (req, res, next) {
  * @api {get} /user/actions BOT TimeLine
  * @apiName BOT TimeLine
  * @apiDescription Example: /user/actions?start=[START INDEX]&offset=[LIMIT]
- * @apiGroup User - READY
+ * @apiGroup User
  * 
  * @apiHeader {String}  x-access-token Users unique access-key
  * 

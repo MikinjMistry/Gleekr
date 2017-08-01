@@ -33,7 +33,7 @@ router.get('/', function (req, res, next) {
 /**
  * @api {post} /sendotp Send / Re-send OTP
  * @apiName Send / Re-send OTP
- * @apiGroup Root - READY
+ * @apiGroup Root
  * 
  * @apiParam {String} mobileNo mobile number with contry code
  * 
@@ -90,7 +90,7 @@ router.post('/sendotp', function (req, res, next) {
 /**
  * @api {post} /verifyotp Verify OTP
  * @apiName Otp verification
- * @apiGroup Root - READY
+ * @apiGroup Root
  * 
  * @apiParam {String} mobileNo mobile number with contry code
  * @apiParam {Number} otp Random four digit code
@@ -203,7 +203,7 @@ router.post('/verifyotp', function (req, res, next) {
 /**
  * @api {post} /voice_call OTP via call
  * @apiName Send OTP through call
- * @apiGroup Root - READY
+ * @apiGroup Root
  * 
  * @apiParam {String} mobileNo mobile number with contry code
  * 
@@ -269,7 +269,7 @@ router.post('/outbound/:mobileNo', function (request, response) {
 /**
  * @api {post} /refresh_token Refresh Token
  * @apiName Refresh token
- * @apiGroup Root - READY
+ * @apiGroup Root
  * 
  * @apiHeader {String}  refreshToken 
  * 

@@ -51,7 +51,7 @@ botFunction.add = function (botJson, loginUser, callback) {
                         _.each(goingUser, function (userObj) {
                             var activityName = results.activityInfo.name;
                             var action = botJson.actionType;
-                            console.log("action:", action);
+
                             var message = "";
                             if (action == "create") {
                                 message = "You have created " + activityName + " activity.";
@@ -72,19 +72,23 @@ botFunction.add = function (botJson, loginUser, callback) {
                             else if (action == "invited") {
                                 message = userName + " has been invited to " + activityName + " activity.";
                             }
-                            console.log("===>", userObj._id);
-                            client.publishMessage(userObj._id, { "type":"bot-notification","message": message,"data":results.activityInfo }, function (status) {
-                                console.log("Notification send to " + userObj._id);
-                            });
+                            client.publishMessage(userObj._id,
+                                {
+                                    type: "bot-notification",
+                                    message: message,
+                                    data: results.activityInfo
+                                }, function (status) {
+                                    console.log("Notification send to " + userObj._id);
+                                });
                         });
                         waterfallCallback(null, true)
                     });
                 }
             ], function (err, result) {
                 if (err) {
-                    parallelCallback({ message: 'Error in notification' }, null);
+                    parallelCallback({ message: 'Error in sending notification' }, null);
                 }
-                parallelCallback(null, { message: 'Notification send successfully' });
+                parallelCallback(null, { message: 'Notification sent successfully' });
             });
         },
         insertBot: function (parallelCallback) {

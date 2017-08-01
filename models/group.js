@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var MemberSchema = new Schema({
-    user_id: mongoose.Schema.Types.ObjectId,
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     createdAt: { type: Date, default: Date.now }
 }, { versionKey: false });
 

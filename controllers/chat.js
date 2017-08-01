@@ -17,8 +17,8 @@ var async = require('async');
 var _ = require('underscore');
 
 /**
- * @api {post} /import Import your chat file
- * @apiName Imort Chat
+ * @api {post} /chat/export Export your chat file
+ * @apiName Export Chat
  * @apiGroup Import / Export
  * @apiDescription You need to pass Form Data
  * 
@@ -29,12 +29,12 @@ var _ = require('underscore');
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.post('/import', function (req, res, next) {
+router.post('/export', function (req, res, next) {
     if (req.files) {
         var file = req.files.file;
         var dir = "./upload/" + req.userInfo.id + '/backup';
         var parentdir = "./upload/" + req.userInfo.id;
-        var mimetype = ['text/plain'];
+        var mimetype = ['application/octet-stream'];
         if (mimetype.indexOf(file.mimetype) != -1) {
             if (!fs.existsSync(parentdir)) {
                 fs.mkdirSync(parentdir);
@@ -50,11 +50,11 @@ router.post('/import', function (req, res, next) {
                 if (err) {
                     return next(err);
                 } else {
-                    res.status(config.OK_STATUS).json({message: 'Chat file imported successfully.'});
+                    res.status(config.OK_STATUS).json({ message: 'Chat file exported successfully.' });
                 }
             });
         } else {
-            res.status(config.BAD_REQUEST).json({message: "This File format is not allowed"});
+            res.status(config.BAD_REQUEST).json({ message: "This File format is not allowed" });
         }
     } else {
         res.status(config.BAD_REQUEST).json({
@@ -62,9 +62,10 @@ router.post('/import', function (req, res, next) {
         });
     }
 });
+
 /**
- * @api {get} /export Export your chat file
- * @apiName Export Chat
+ * @api {get} /chat/import Import your chat file
+ * @apiName Import Chat
  * @apiGroup Import / Export
  *
  * @apiHeader {String}  x-access-token Users unique access-key
@@ -72,7 +73,7 @@ router.post('/import', function (req, res, next) {
  * @apiSuccess (Success 200) {String} message Success message.
  * @apiError (Error 4xx) {String} message Validation or error message.
  */
-router.get('/export', function (req, res, next) {
+router.get('/import', function (req, res, next) {
     var dir = "./upload/" + req.userInfo.id + '/backup';
     if (fs.existsSync(dir)) {
         fs.readdirSync(dir).forEach(function (file, index) {
@@ -81,9 +82,10 @@ router.get('/export', function (req, res, next) {
             res.send(new Buffer(obj).toString('base64'));
         });
     } else {
-        res.status(config.BAD_REQUEST).json({message: 'Sorry! You haven\'t import any file.'});
+        res.status(config.BAD_REQUEST).json({ message: 'Sorry! Could not find any backup.' });
     }
 });
+
 var deleteFolderRecursive = function (path) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(function (file, index) {
