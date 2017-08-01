@@ -13,6 +13,8 @@ var moscaServer = require('./mqtt/mqttBroker');
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
 
+//var pushMsg = require('./notification/pushNotification')
+
 var app = express();
 app.use(fileUpload());
 // view engine setup
