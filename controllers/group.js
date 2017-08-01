@@ -283,12 +283,35 @@ router.post('/add_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+        //Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+			
+		Group.find({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } })
+			.populate({ path: "members.user_id", select: ["_id","mobileNo","name"],model:'users', $elemMatch: { "isDeleted": { $ne: true } } })
+			.exec(function (err, groupData) {
+			
             if (err) {
                 return next(err);
             }
             if (groupData) {
-
+				groupData = groupData[0];
+				
+			/*	groupData.members = _.chain(groupData.members).map(function (item) { 
+					var uname = "";
+					if(item.user_id.name){
+						uname = item.user_id.name;
+					} else {
+						uname = item.user_id.mobileNo;
+					}
+					return { 
+						userName: uname, 
+						user_id: item.user_id._id, 
+						createdAt: item.createdAt }; 
+					}).value();
+		*/
+				console.log(groupData);
+		
+				console.log("\n-------------------------\n\n",groupData.members,"\n\n-------------------------\n");
+		
                 var arr = _.map(req.body.members, function (val) {
                     return { 'user_id': val };
                 });
@@ -399,11 +422,14 @@ router.post('/remove_member', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+        Group.find({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } })
+			.populate({ path: "members.user_id", select: ["_id","mobileNo","name"],model:'users', $elemMatch: { "isDeleted": { $ne: true } } })
+			.exec(function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
+				groupData = groupData[0];
                 Group.findOneAndUpdate({ _id: req.body.id }, {
                     $pull: {
                         'members': { 'user_id': { '$in': req.body.members } }
@@ -505,11 +531,15 @@ router.post('/exit_group', function (req, res, next) {
     req.checkBody(schema);
     var errors = req.validationErrors();
     if (!errors) {
-        Group.findOne({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } }, function (err, groupData) {
+        Group.find({ _id: { $eq: req.body.id }, isDeleted: { $ne: true } })
+			.populate({ path: "members.user_id", select: ["_id","mobileNo","name"],model:'users', $elemMatch: { "isDeleted": { $ne: true } } })
+			.exec(function (err, groupData) {
             if (err) {
                 return next(err);
             }
             if (groupData) {
+				groupData = groupData[0];
+				
                 Group.findOneAndUpdate({ _id: req.body.id }, {
                     $pull: {
                         'members': { 'user_id': { '$eq': req.userInfo.id } }
@@ -530,15 +560,15 @@ router.post('/exit_group', function (req, res, next) {
 
                             // Send notification to each member
                             _.each(groupData.members, function (member) {
-								if(member.user_id != req.userInfo.id){
-									client.publishMessage(member.user_id,
+								if(member.user_id._id != req.userInfo.id){
+									client.publishMessage(member.user_id._id,
                                     {
                                         type: "group-notification",
                                         message: username + " has removed from group " + groupData.name,
                                         data: groupData
                                     },
                                     function (status) {
-                                        console.log("Notification send to " + member.user_id);
+                                        console.log("Notification send to " + member.user_id._id);
                                     });
 								}
                             });
