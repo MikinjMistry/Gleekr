@@ -332,7 +332,9 @@ router.post('/add_member', function (req, res, next) {
 
                                         // Send notification to each member
                                         _.each(group_members, function (member) {
-                                            client.publishMessage(member,
+											if(member != req.userInfo.id)
+											{
+												client.publishMessage(member,
                                                 {
                                                     type: "group-notification",
                                                     message: username + " has been added in group " + groupData.name,
@@ -341,6 +343,7 @@ router.post('/add_member', function (req, res, next) {
                                                 function (status) {
                                                     console.log("Notification send to " + member);
                                                 });
+											}
                                         });
                                     }
                                     loop_callback();
@@ -440,7 +443,8 @@ router.post('/remove_member', function (req, res, next) {
 
                                         // Send notification to each member
                                         _.each(group_members, function (member) {
-                                            client.publishMessage(member,
+											if(member != req.userInfo.id){
+												client.publishMessage(member,
                                                 {
                                                     type: "group-notification",
                                                     message: username + " has removed from group " + groupData.name,
@@ -449,6 +453,7 @@ router.post('/remove_member', function (req, res, next) {
                                                 function (status) {
                                                     console.log("Notification send to " + member);
                                                 });
+											}
                                         });
                                     }
                                     loop_callback();
@@ -525,7 +530,8 @@ router.post('/exit_group', function (req, res, next) {
 
                             // Send notification to each member
                             _.each(groupData.members, function (member) {
-                                client.publishMessage(member.user_id,
+								if(member.user_id != req.userInfo.id){
+									client.publishMessage(member.user_id,
                                     {
                                         type: "group-notification",
                                         message: username + " has removed from group " + groupData.name,
@@ -534,6 +540,7 @@ router.post('/exit_group', function (req, res, next) {
                                     function (status) {
                                         console.log("Notification send to " + member.user_id);
                                     });
+								}
                             });
                         }
                     });
