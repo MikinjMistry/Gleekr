@@ -36,7 +36,7 @@ var _ = require('underscore');
 router.get('/', function (req, res, next) {
     async.parallel({
         others: function (callback) {
-            User.find({ _id: req.userInfo.id })
+            User.findOne({ _id: req.userInfo.id })
                 .select('activities')
                 .populate({ path: 'activities.activity_id', model: 'activities', match: { isDeleted: { $ne: true } } })
                 .exec(function (err, data) {
@@ -56,16 +56,20 @@ router.get('/', function (req, res, next) {
 
                 async.each(data, function (item, callback1) {
                     User.find({ 'activities': { "$elemMatch": { 'activity_id': item._id } }, _id: { $eq: req.userInfo.id } }, { 'activities.$': 1 }, function (err, subdata) {
-                        if (err)
+                        if (err) {
                             callback("Activity not found");
+                        }
 
-                        var activityDetails = {};
-                        activityDetails = Object.assign({}, item.toObject());
-                        activityDetails.action = subdata[0].activities[0].action;
-                        activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
+                        if (subdata) {
+                            var activityDetails = {};
+                            activityDetails = Object.assign({}, item.toObject());
+                            activityDetails.action = subdata[0].activities[0].action;
+                            activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
 
-                        ret.push(activityDetails);
+                            ret.push(activityDetails);
+                        }
                         callback1();
+
                     });
                 }, function (err) {
                     callback(null, ret);
@@ -87,8 +91,8 @@ router.get('/', function (req, res, next) {
             all: []
         };
 
-        if (results.others.length > 0 && results.others[0].activities.length > 0) {
-            var activities = _.filter(results.others[0].activities, function (activity) {
+        if (results.others && results.others.activities.length > 0) {
+            var activities = _.filter(results.others.activities, function (activity) {
                 return activity.activity_id;
             }) || [];
 
@@ -213,10 +217,21 @@ router.get('/', function (req, res, next) {
             }
 
             //archived
-            responseData.archived = _.filter(_.union(invited, results.createdByMe), function (activity) {
-                return activity.isArchived === true;
+            var archived = _.filter(activities, function (activity) {
+                return activity.activity_id.isArchived === true;
             });
-            responseData.archived = sortActivityByDate(responseData.archived, 'desc', 'createdAt');
+
+            if (archived.length > 0) {
+                _.each(archived, function (obj) {
+                    var activityDetails = {};
+                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails.action = obj.action;
+                    activityDetails.isPinned = obj.isPinned || false;
+
+                    responseData.archived.push(activityDetails);
+                });
+                responseData.archived = sortActivityByDate(responseData.archived, 'desc', 'createdAt');
+            }
         }
         res.status(config.OK_STATUS).json(responseData);
     });
@@ -790,36 +805,37 @@ router.post('/chat_actions', function (req, res, next) {
     }
 });
 
-cron.schedule('0 0 0 * * *', function () {
-    console.log('running a task every day');
+//0 0 0 * * *
+cron.schedule('0 * * * * *', function () {
+    // console.log('running a task every day');
     archiveActivity();
 });
 
 cron.schedule('0 * * * * *', function () {
-    console.log('running a task every minute');
+    // console.log('running a task every minute');
     archiveActivityForEnddate();
 });
 
 function archiveActivity() {
     var today = moment();
-    Activity.update({ isArchived: { $ne: true }, endDate: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
+    Activity.updateMany({ isArchived: { $ne: true }, endTime: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
         if (err) {
-            console.log("err in cron : ", err);
+            // console.log("Activity with enddate archieve err in cron : ", err);
         }
         if (response) {
-            console.log("cron executed");
+            // console.log("Activity with enddate archieve cron executed");
         }
     });
 }
 
 function archiveActivityForEnddate() {
     var today = new Date(moment().subtract(1, 'days').format("YYYY-MM-DD HH:mm")).getTime();
-    Activity.update({ isArchived: { $ne: true }, endDate: { $exists: false }, endTime: { $exists: false }, modifiedAt: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
+    Activity.updateMany({ isArchived: { $ne: true }, endDate: { $exists: false }, endTime: { $exists: false }, modifiedAt: { $lt: today } }, { $set: { isArchived: true } }, function (err, response) {
         if (err) {
-            console.log("err in cron : ", err);
+            // console.log("Activity without enddate archieve err in cron : ", err);
         }
         if (response) {
-            console.log("cron executed");
+            // console.log("Activity without enddate archieve cron executed");
         }
     });
 }

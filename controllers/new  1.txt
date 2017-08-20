@@ -1,0 +1,26 @@
+ (1) Activity Detail API 
+---------------------------
+==> Count is incorrect when invitation is rejected.
+
+
+
+ (2) Archive activity 
+------------------------
+==> I've added isArchived field to activity schema with default value as false. 
+	The archive activity API should check the end dates of all the activities and 
+	if their end dates has passed then mark them as archived by updated isArchive field to true. 
+	This should be done regardless of user as it will be used to set a chron job which will be triggered every day (i.e once a day).
+
+
+
+ (3) Sync contacts 
+-----------------------
+==> Need to create a new collection named "contacts" which has below fields:
+       - number
+       - user_id (references to user schema _id)
+
+When sync api is called with the phone contacts, all the contacts needs to be stored in this new collection. 
+Filtering should work the way it is working right now - no change required there.
+
+After implementing this change, we might need to make a slight change in the registration process. 
+when a user successfully registers and if his number is there in the contact list of any user in contacts collections then we need to remove it from there.

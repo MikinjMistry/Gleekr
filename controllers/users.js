@@ -21,6 +21,8 @@ var async = require('async');
 var _ = require('underscore');
 var jwt = require('jsonwebtoken');
 
+var pushMsg = require('../notification/pushNotification');
+
 /**
  * @api {put} /user Update user profile
  * @apiName Update Profile
@@ -356,6 +358,11 @@ router.post('/send_card', function (req, res, next) {
 /**
  * @api {get} /user Get User profile
  * @apiName User Profile Information
+ * @apiDescription For getting profile of other user pass query string params "id" or "mobile_no". 
+ * For mobile number '+' should be ignored while passing as query string but country code should be there.
+ * Example: 
+ * /user?mobile_no=919874563210 and 
+ * /user?id=595391d4a808540520dfd2a4
  * @apiGroup User 
  *
  * @apiHeader {String}  Content-Type application/json
@@ -367,15 +374,28 @@ router.post('/send_card', function (req, res, next) {
  * @apiError (Error 4xx) {String} message Validation or error message
  */
 router.get('/', function (req, res, next) {
-    User.findOne({ _id: req.userInfo.id }, { activities: 0 }, function (err, user) {
+    var condition = { _id: { $eq: req.userInfo.id } }; //default get profile based on access token
+    var hideFields = { activities: 0 };
+
+    if (req.query.id) { //if id is present get details based on id passed 
+        condition = { _id: { $eq: req.query.id } }
+        hideFields.deviceToken = 0;
+    }
+    if (req.query.mobile_no) { //if mobile_no is present get details based on mobile_no passed 
+        condition = { mobileNo: { $eq: '+' + req.query.mobile_no } }
+        hideFields.deviceToken = 0;
+    }
+
+    User.findOne(condition, hideFields, function (err, user) {
         if (err) {
             return next(err);
         }
 
         if (user) {
             userData = user.toObject();
+            userData.totalActivities = 0;
 
-            Activity.count({ user_id: req.userInfo.id, isDeleted: { $ne: true } }, function (err, data) {
+            Activity.count({ user_id: userData._id, isDeleted: { $ne: true } }, function (err, data) {
                 if (err) {
                     return next(err);
                 }
@@ -467,7 +487,7 @@ router.post('/sync_contacts', function (req, res, next) {
                 getUserGroup: function (callback) {
                     //Get user's group
                     Group.find({ "members": { $elemMatch: { "user_id": { $eq: req.userInfo.id } } }, isDeleted: { $ne: true } })
-                        .populate({ path: "members.user_id", select: "name", $elemMatch: { "isDeleted": { $ne: true } } })
+                        .populate({ path: "members.user_id", select: "mobileNo", $elemMatch: { "isDeleted": { $ne: true } } })
                         .exec(function (error, groups) {
                             if (error) {
                                 callback(error);
@@ -476,7 +496,7 @@ router.post('/sync_contacts', function (req, res, next) {
                                     var groupsData = [];
                                     _.each(groups, function (group) {
                                         var temp = Object.assign({}, group.toObject());
-                                        temp.members = _.chain(group.members).map(function (item) { return { userName: item.user_id.name, user_id: item.user_id._id, createdAt: item.createdAt }; }).value();
+                                        temp.members = _.chain(group.members).map(function (item) { return { mobileNo: item.user_id.mobileNo, user_id: item.user_id._id, createdAt: item.createdAt }; }).value();
                                         groupsData.push(temp);
                                     });
                                     responseData.gleekrGroups = groupsData;
@@ -552,6 +572,11 @@ router.get('/actions', function (req, res, next) {
     } else {
         res.status(config.BAD_REQUEST).json({ message: errors });
     }
+});
+
+router.get('/push-notification', function (req, res, next) {
+    pushMsg.sendMessage({ 'messageFrom': 'Gleekr test' }, "0eed5376931cdda855ee2886341934bbb444491cb1157a8f139bcb7763801852");
+    res.status(config.OK_STATUS).json({ message: "success" });
 });
 
 /* Update User details */
