@@ -38,7 +38,9 @@ router.get('/', function (req, res, next) {
         others: function (callback) {
             User.findOne({ _id: req.userInfo.id })
                 .select('activities')
-                .populate({ path: 'activities.activity_id', model: 'activities', match: { isDeleted: { $ne: true } } })
+                .populate({ path: 'activities.activity_id', model: 'activities', match: { isDeleted: { $ne: true } }, 
+					populate : {path:'user_id',model:'users'}
+				})
                 .exec(function (err, data) {
                     if (err) {
                         callback('Error in fetching activities', null);
@@ -65,7 +67,7 @@ router.get('/', function (req, res, next) {
                             activityDetails = Object.assign({}, item.toObject());
                             activityDetails.action = subdata[0].activities[0].action;
                             activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
-
+							activityDetails.mobile_no = req.userInfo.mobileNo;
                             ret.push(activityDetails);
                         }
                         callback1();
@@ -93,9 +95,13 @@ router.get('/', function (req, res, next) {
 
         if (results.others && results.others.activities.length > 0) {
             var activities = _.filter(results.others.activities, function (activity) {
+				activity.activity_id.mobile_no = activity.activity_id.user_id.mobileNo;
+				//activity.activity_id.user_id = activity.activity_id.user_id._id;
                 return activity.activity_id;
             }) || [];
 
+			console.log(activities);
+			
             var previousDate = new Date(moment().subtract(6, 'days').format("YYYY-MM-DD")).getTime();
             var nextTwoDate = new Date(moment().add(3, 'days').format("YYYY-MM-DD HH:mm")).getTime();
             var currentDate = new Date().getTime();
