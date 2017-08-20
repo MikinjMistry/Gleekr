@@ -1,6 +1,7 @@
 module.exports = {
     "node_port": 3000,
-    "database": "mongodb://admin:wqFB3Svj668k@127.0.0.1:27017/gleekr",
+    "database": "mongodb://127.0.0.1:27017/gleekr",
+//    "database": "mongodb://admin:wqFB3Svj668k@127.0.0.1:27017/gleekr",
     "live_database": "mongodb://admin:wqFB3Svj668k@52.76.246.237:27017/gleekr?authSource=admin",
     "TWILIO_ACCOUNT_SID" : "AC85e236476ea6edc6af5dd63bd677fadd",
     "TWILIO_AUTH_TOKEN" : "aa83bae89551d91d913347f33c40b68f",
