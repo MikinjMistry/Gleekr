@@ -20,6 +20,24 @@ var groupAction = {
     removedMembers: "removed-members",
     left: "left"
 };
+/**
+ * @api {get} /group Get all group data
+ * @apiName Get all Group
+ * @apiGroup Group
+ * @apiDescription You will get all groups detail
+ * 
+ * @apiHeader {String}  x-access-token Users unique access-key
+ * 
+ * @apiSuccess (Success 200) {String} message Success message.
+ * @apiError (Error 4xx) {String} message Validation or error message.
+*/
+router.get('/', function(req, res, next){
+    Group.find({user_id : { $eq : req.userinfo.id} }, function(err, data){
+        if (err)
+            res.status(BAD_REQUEST).json("Error in total invite accepted");
+        res.status(OK_STATUS).json(data);
+    });
+});
 
 /**
  * @api {post} /group Create Group

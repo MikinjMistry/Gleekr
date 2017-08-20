@@ -8,7 +8,7 @@ var bodyParserJsonError = require('express-body-parser-json-error');
 var config = require('./config');
 var db = require('./models/db');
 var moment = require('moment');
-var moscaServer = require('./mqtt/mqttBroker');
+var mqttBackendClient = require('./mqtt/mqttBackendClient');
 
 var fileUpload = require('express-fileupload');
 var expressValidator = require('express-validator');
@@ -43,9 +43,6 @@ app.use(expressValidator({
         }, isArray: function (value) {
             return Array.isArray(value);
         },
-//        notEmpty: function (array) {
-//            return array.length > 0;
-//        }
     }
 }));
 
@@ -60,7 +57,6 @@ app.use(require('./controllers'));
 app.use(function (req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
-    console.log("error:",err);
     next(err);
 });
 
@@ -71,7 +67,6 @@ app.use(function (req, res, next) {
 if (app.get('env') === 'development') {
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
-        console.log("error:",err);
         res.json({
             message: err.message
         });
@@ -82,7 +77,6 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
     res.status(err.status || 500);
-    console.log("error:",err);
     res.json({
         message: err.message
     });
