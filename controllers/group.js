@@ -32,10 +32,10 @@ var groupAction = {
  * @apiError (Error 4xx) {String} message Validation or error message.
 */
 router.get('/', function(req, res, next){
-    Group.find({user_id : { $eq : req.userinfo.id} }, function(err, data){
+    Group.find({$or : [ {'members' : {"$elemMatch": {user_id : req.userInfo.id}}},{user_id : { $eq : req.userInfo.id}}]} , function(err, data){
         if (err)
-            res.status(BAD_REQUEST).json("Error in total invite accepted");
-        res.status(OK_STATUS).json(data);
+            res.status(config.BAD_REQUEST).json("Error in get all group detail");
+        res.status(config.OK_STATUS).json(data);
     });
 });
 
