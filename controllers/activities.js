@@ -40,7 +40,7 @@ router.get('/', function (req, res, next) {
                 .select('activities')
                 .populate({ path: 'activities.activity_id', model: 'activities', match: { isDeleted: { $ne: true } }, 
 					populate : {path:'user_id',model:'users'}
-				})
+				}).lean()
                 .exec(function (err, data) {
                     if (err) {
                         callback('Error in fetching activities', null);
@@ -65,6 +65,7 @@ router.get('/', function (req, res, next) {
                         if (subdata) {
                             var activityDetails = {};
                             activityDetails = Object.assign({}, item.toObject());
+//                            activityDetails = obj.activity_id;
                             activityDetails.action = subdata[0].activities[0].action;
                             activityDetails.isPinned = subdata[0].activities[0].isPinned || false;
 							activityDetails.mobile_no = req.userInfo.mobileNo;
@@ -94,10 +95,15 @@ router.get('/', function (req, res, next) {
         };
 
         if (results.others && results.others.activities.length > 0) {
-            var activities = _.filter(results.others.activities, function (activity) {
+            
+            			console.log("\n\n<=====>  ",results.others.activities);
+
+            var activities = _.map(results.others.activities, function (activity) {
+                
+                console.log("==>",activity.activity_id.user_id.mobileNo);
 				activity.activity_id.mobile_no = activity.activity_id.user_id.mobileNo;
-				//activity.activity_id.user_id = activity.activity_id.user_id._id;
-                return activity.activity_id;
+				activity.activity_id.user_id = activity.activity_id.user_id._id;
+                return activity;
             }) || [];
 
 			console.log(activities);
@@ -117,7 +123,8 @@ router.get('/', function (req, res, next) {
             if (pinned.length > 0) {
                 _.each(pinned, function (obj) {
                     var activityDetails = {};
-                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+//                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails = obj.activity_id;
                     activityDetails.action = obj.action;
                     activityDetails.isPinned = obj.isPinned || false;
 
@@ -131,7 +138,8 @@ router.get('/', function (req, res, next) {
                 _.each(invited, function (obj) {
                     if (!obj.activity_id.isArchived) {
                         var activityDetails = {};
-                        activityDetails = Object.assign({}, obj.activity_id.toObject());
+//                        activityDetails = Object.assign({}, obj.activity_id.toObject());
+                        activityDetails = obj.activity_id;
                         activityDetails.action = obj.action;
                         activityDetails.isPinned = obj.isPinned || false;
 
@@ -156,7 +164,8 @@ router.get('/', function (req, res, next) {
             if (going.length > 0) {
                 _.each(going, function (obj) {
                     var activityDetails = {};
-                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+//                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails = obj.activity_id;
                     activityDetails.action = obj.action;
                     activityDetails.isPinned = obj.isPinned || false;
 
@@ -213,7 +222,8 @@ router.get('/', function (req, res, next) {
             if (all.length > 0) {
                 _.each(all, function (obj) {
                     var activityDetails = {};
-                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+//                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails = obj.activity_id;
                     activityDetails.action = obj.action;
                     activityDetails.isPinned = obj.isPinned || false;
 
@@ -230,7 +240,8 @@ router.get('/', function (req, res, next) {
             if (archived.length > 0) {
                 _.each(archived, function (obj) {
                     var activityDetails = {};
-                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+//                    activityDetails = Object.assign({}, obj.activity_id.toObject());
+                    activityDetails = obj.activity_id;
                     activityDetails.action = obj.action;
                     activityDetails.isPinned = obj.isPinned || false;
 
