@@ -33,7 +33,6 @@ var groupAction = {
 */
 router.get('/', function(req, res, next){
     Group.find({$or : [ {'members' : {"$elemMatch": {user_id : req.userInfo.id}}},{user_id : { $eq : req.userInfo.id}}]} , function(err, data){
-//    Group.find({user_id : { $eq : req.userInfo.id}, $or : [ {'members' : {"$elemMatch": {user_id : req.userInfo.id}}}] }, function(err, data){
         if (err)
             res.status(config.BAD_REQUEST).json("Error in get all group detail");
         res.status(config.OK_STATUS).json(data);
